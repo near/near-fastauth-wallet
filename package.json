@@ -1,12 +1,16 @@
 {
   "name": "near-fastauth-wallet",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "scripts": {
     "build": "nx build",
     "test": "nx test"
   },
   "dependencies": {
+    "@near-js/transactions": "^0.2.1",
+    "@near-wallet-selector/core": "^8.5.2",
+    "@near-wallet-selector/wallet-utils": "^8.5.2",
+    "near-api-js": "^2.1.4",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

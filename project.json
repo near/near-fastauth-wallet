@@ -1,5 +1,8 @@
 {
   "name": "near-fastauth-wallet",
+  "version": "0.0.1",
+  "main": "./index.js",
+  "types": "./index.d.ts",
   "$schema": "node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "src",
   "projectType": "library",
@@ -8,6 +11,8 @@
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
+        "skipTypeField": true,
+        "format": ["esm", "cjs"],
         "outputPath": "dist/near-fastauth-wallet",
         "main": "./src/index.ts",
         "tsConfig": "./tsconfig.lib.json",
