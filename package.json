@@ -1,9 +1,9 @@
 {
   "name": "near-fastauth-wallet",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "license": "MIT",
   "scripts": {
-    "build": "nx build",
+    "build": "nx build --buildLibsFromSource",
     "test": "nx test"
   },
   "dependencies": {
