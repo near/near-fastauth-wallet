@@ -4,7 +4,11 @@ This library was generated with [Nx](https://nx.dev).
 
 ## Building
 
-Run `nx build near-fastauth-wallet` to build the library.
+Run `nx run build` to build the library.
+
+## Deploying
+
+Run `nx run deploy` to publish npm package
 
 ## Running unit tests
 

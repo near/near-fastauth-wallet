@@ -4,7 +4,8 @@
   "license": "MIT",
   "scripts": {
     "build": "nx build --buildLibsFromSource",
-    "test": "nx test"
+    "test": "nx test",
+    "deploy": "cd dist/near-fastauth-wallet/ && npm publish"
   },
   "dependencies": {
     "@near-js/transactions": "^0.2.1",
