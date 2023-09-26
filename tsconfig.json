@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "rootDir": ".",
+    "allowJs": true,
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
@@ -8,17 +9,18 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "target": "es2021",
-    "module": "commonjs",
-    "lib": ["es2020", "dom"],
+    "target": "ES2020",
+    "module": "CommonJS",
+    "lib": ["ESNext", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "baseUrl": ".",
-    "outDir": "./dist",
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": "./src",
     "paths": {
       "near-fastauth-wallet": ["src/index.ts"]
     },
-    "types": ["vitest"]
+    "types": ["node"],
+    "esModuleInterop": true,
   },
   "exclude": ["node_modules", "tmp"],
   "files": [],

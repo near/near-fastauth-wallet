@@ -1,7 +1,7 @@
-import { nearFastauthWallet } from './near-fastauth-wallet';
+import { setupFastAuthWallet } from './near-fastauth-wallet';
 
 describe('nearFastauthWallet', () => {
   it('should work', () => {
-    expect(nearFastauthWallet()).toEqual('near-fastauth-wallet');
+    expect(setupFastAuthWallet()).toEqual('near-fastauth-wallet');
   });
 });
