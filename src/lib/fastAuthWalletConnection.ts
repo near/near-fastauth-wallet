@@ -207,24 +207,67 @@ export class FastAuthWalletConnection {
       newUrl.searchParams.append('isRecovery', isRecovery + '');
     }
 
-    this._iframe.src = newUrl.toString();
-    const myDialog = document.createElement('dialog');
-    myDialog.style.width = '50%';
-    myDialog.style.height = '50%';
-    document.body.appendChild(myDialog);
-    myDialog.appendChild(this._iframe);
-    myDialog.showModal();
-    myDialog.addEventListener('click', function (event) {
-      const rect = myDialog.getBoundingClientRect();
-      const isInDialog =
-        rect.top <= event.clientY &&
-        event.clientY <= rect.top + rect.height &&
-        rect.left <= event.clientX &&
-        event.clientX <= rect.left + rect.width;
-      if (!isInDialog) {
-        myDialog.close();
-      }
+    const preBiometricAuthAccount = await new Promise(async (resolve) => {
+      const requestId = 1234;
+      this._iframe.src =  new URL(this._walletBaseUrl + '/rpc/').toString();
+      document.body.appendChild(this._iframe);
+      await new Promise(resolve => setTimeout(() => resolve(null),2000))
+      this._iframe.contentWindow?.postMessage({
+        type: 'method',
+        method: 'query',
+        id: requestId,
+        params: {
+          request_type: 'get_pre_biometric_auth_account'
+        }
+      },'*');
+      const listener = (e: MessageEvent) => {
+        if (
+          e.data.id === requestId
+        ) {
+          window.removeEventListener('message', listener);
+          resolve(e.data.result);
+        }
+      };
+      window.addEventListener('message', listener);
     });
+
+    if (preBiometricAuthAccount !== email || isRecovery === false) {
+      window.location.replace(newUrl.toString());
+    } else {
+      this._iframe.src = newUrl.toString();
+      const myDialog = document.createElement('dialog');
+      myDialog.style.width = '50%';
+      myDialog.style.height = '50%';
+      document.body.appendChild(myDialog);
+      myDialog.appendChild(this._iframe);
+      myDialog.showModal();
+      myDialog.addEventListener('click', function (event) {
+        const rect = myDialog.getBoundingClientRect();
+        const isInDialog =
+          rect.top <= event.clientY &&
+          event.clientY <= rect.top + rect.height &&
+          rect.left <= event.clientX &&
+          event.clientX <= rect.left + rect.width;
+        if (!isInDialog) {
+          myDialog.close();
+        }
+      });
+      const { publicKey, allKeys, accountId } = await new Promise((resolve) => {
+        const listener = (e: MessageEvent) => {
+          if (
+            e.data.params && e.data.params.request_type === 'complete_sign_in'
+          ) {
+            window.removeEventListener('message', listener);
+            resolve({ publicKey: e.data.params.publicKey, allKeys: e.data.params.allKeys, accountId: e.data.params.accountId });
+          }
+        };
+        window.addEventListener('message', listener);
+      }) as {publicKey: string; allKeys: string; accountId: string;};
+      currentUrl.searchParams.append('public_key', publicKey);
+      currentUrl.searchParams.append('all_keys', allKeys);
+      currentUrl.searchParams.append('account_id', accountId);
+      window.location.replace(currentUrl);
+    }
   }
 
   /**
