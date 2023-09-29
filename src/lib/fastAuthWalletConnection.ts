@@ -234,7 +234,7 @@ export class FastAuthWalletConnection {
     transactions,
     meta,
     callbackUrl,
-  }: RequestSignTransactionsOptions): Promise<{ signedDelegates: SignedDelegate[]; closeDialog: () => void }> {
+  }: RequestSignTransactionsOptions): Promise<{ signedDelegates: SignedDelegate[]; closeDialog: () => void; error?: string; }> {
     const currentUrl = new URL(window.location.href);
     const newUrl = new URL(this._walletBaseUrl + '/sign/');
 
@@ -271,9 +271,12 @@ export class FastAuthWalletConnection {
       const listener = (e: MessageEvent) => {
         if (
           e.data.signedDelegates &&
-          e.data.signedDelegates
+          (e.data.signedDelegates
             .split(',')
-            .some((s: string) => deserialize(SCHEMA, SignedDelegate, Buffer.from(s, 'base64')))
+            .some((s: string) =>
+              deserialize(SCHEMA, SignedDelegate, Buffer.from(s, 'base64')),
+            ) ||
+            e.data.signedDelegates.length === 0)
         ) {
           window.removeEventListener('message', listener);
           resolve({
@@ -281,6 +284,7 @@ export class FastAuthWalletConnection {
               .split(',')
               .map((s: string) => deserialize(SCHEMA, SignedDelegate, Buffer.from(s, 'base64'))),
             closeDialog: () => myDialog.close(),
+            error: e.data.error
           });
         }
       };
