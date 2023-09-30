@@ -1,6 +1,6 @@
 {
-  "name": "near-fastauth-wallet",
-  "version": "0.0.5",
+  "name": "near-fastauth-wallet-module",
+  "version": "0.0.8",
   "license": "MIT",
   "scripts": {
     "build": "nx build --buildLibsFromSource",

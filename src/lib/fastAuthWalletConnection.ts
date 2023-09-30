@@ -207,20 +207,28 @@ export class FastAuthWalletConnection {
       newUrl.searchParams.append('isRecovery', isRecovery + '');
     }
 
-    const preBiometricAuthAccount = await new Promise(async (resolve) => {
+    if (!isRecovery) {
+      window.location.replace(newUrl.toString());
+      return;
+    }
+
+    const preBiometricAuthAccount = await new Promise(resolve => {
       const requestId = 1234;
       this._iframe.src =  new URL(this._walletBaseUrl + '/rpc/').toString();
       document.body.appendChild(this._iframe);
-      await new Promise(resolve => setTimeout(() => resolve(null),2000))
-      this._iframe.contentWindow?.postMessage({
-        type: 'method',
-        method: 'query',
-        id: requestId,
-        params: {
-          request_type: 'get_pre_biometric_auth_account'
-        }
-      },'*');
       const listener = (e: MessageEvent) => {
+        if (
+          e.data.method === 'ready'
+        ) {
+          this._iframe.contentWindow?.postMessage({
+            type: 'method',
+            method: 'query',
+            id: requestId,
+            params: {
+              request_type: 'get_pre_biometric_auth_account'
+            }
+          },'*');
+        }
         if (
           e.data.id === requestId
         ) {
@@ -231,7 +239,7 @@ export class FastAuthWalletConnection {
       window.addEventListener('message', listener);
     });
 
-    if (preBiometricAuthAccount !== email || isRecovery === false) {
+    if (preBiometricAuthAccount !== email) {
       window.location.replace(newUrl.toString());
     } else {
       this._iframe.src = newUrl.toString();
