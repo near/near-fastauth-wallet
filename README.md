@@ -8,7 +8,8 @@ Run `nx build --buildLibsFromSource` to build the library.
 
 ## Deploying
 
-Run `nx run deploy` to publish npm package
+Need to make sure npm is installed and user is authenticated
+Run `cd dist/near-fastauth-wallet && npm publish` to publish npm package
 
 ## Running unit tests
 
