@@ -1,5 +1,5 @@
 {
-  "name": "near-fastauth-wallet-module",
+  "name": "near-fastauth-wallet",
   "version": "0.0.8",
   "license": "MIT",
   "scripts": {
