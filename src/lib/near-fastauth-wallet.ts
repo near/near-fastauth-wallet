@@ -76,6 +76,7 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
   logger,
 }) => {
   const _state = await setupWalletState(params, options.network);
+  let relayerUrl = params.relayerUrl;
   const getAccounts = async (): Promise<Array<Account>> => {
     const accountId = _state.wallet.getAccountId();
     const account = _state.wallet.account();
@@ -188,7 +189,7 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
         const { closeDialog, signedDelegates } = await _state.wallet.requestSignTransactions(arg);
         closeDialog();
         signedDelegates.forEach((signedDelegate) =>
-          fetch(params.relayerUrl, {
+          fetch(relayerUrl, {
             method: 'POST',
             mode: 'cors',
             body: JSON.stringify(Array.from(encodeSignedDelegate(signedDelegate))),
@@ -202,7 +203,7 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
           receiverId: receiverId as string,
         });
 
-        await fetch(params.relayerUrl, {
+        await fetch(relayerUrl, {
           method: 'POST',
           mode: 'cors',
           body: JSON.stringify(Array.from(encodeSignedDelegate(signedDelegate))),
@@ -227,7 +228,7 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
         const { closeDialog, signedDelegates } = await _state.wallet.requestSignTransactions(arg);
         closeDialog();
         signedDelegates.forEach((signedDelegate) =>
-          fetch(params.relayerUrl, {
+          fetch(relayerUrl, {
             method: 'POST',
             mode: 'cors',
             body: JSON.stringify(Array.from(encodeSignedDelegate(signedDelegate))),
@@ -242,7 +243,7 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
             receiverId: receiverId as string,
           });
 
-          await fetch(params.relayerUrl, {
+          await fetch(relayerUrl, {
             method: 'POST',
             mode: 'cors',
             body: JSON.stringify(Array.from(encodeSignedDelegate(signedDelegate))),
@@ -250,6 +251,12 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
           });
         }
       }
+    },
+    setRelayerUrl({relayerUrl: relayerUrlArg}) {
+      relayerUrl = relayerUrlArg
+    },
+    resetRelayerUrl() {
+      relayerUrl = params.relayerUrl;
     },
   };
 };
