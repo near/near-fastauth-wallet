@@ -32,6 +32,15 @@ interface RequestSignTransactionsOptions {
   meta?: string;
 }
 
+const createDialog = (): HTMLDialogElement => {
+  const myDialog = document.createElement('dialog');
+  myDialog.style.width = '50%';
+  myDialog.style.height = '50%';
+  myDialog.style.minWidth = '350px';
+  myDialog.style.minHeight = '500px';
+  return myDialog;
+}
+
 export class FastAuthWalletConnection {
   /** @hidden */
   _walletBaseUrl: string;
@@ -243,9 +252,7 @@ export class FastAuthWalletConnection {
       window.location.replace(newUrl.toString());
     } else {
       this._iframe.src = newUrl.toString();
-      const myDialog = document.createElement('dialog');
-      myDialog.style.width = '50%';
-      myDialog.style.height = '50%';
+      const myDialog = createDialog();
       document.body.appendChild(myDialog);
       myDialog.appendChild(this._iframe);
       myDialog.showModal();
@@ -301,9 +308,7 @@ export class FastAuthWalletConnection {
     if (meta) newUrl.searchParams.set('meta', meta);
 
     this._iframe.src = newUrl.toString();
-    const myDialog = document.createElement('dialog');
-    myDialog.style.width = '50%';
-    myDialog.style.height = '50%';
+    const myDialog = createDialog()
     document.body.appendChild(myDialog);
     myDialog.appendChild(this._iframe);
     myDialog.showModal();
