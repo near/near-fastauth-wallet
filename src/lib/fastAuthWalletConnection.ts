@@ -34,10 +34,10 @@ interface RequestSignTransactionsOptions {
 
 const createDialog = (): HTMLDialogElement => {
   const myDialog = document.createElement('dialog');
-  myDialog.style.width = '50%';
-  myDialog.style.height = '50%';
-  myDialog.style.minWidth = '350px';
-  myDialog.style.minHeight = '500px';
+  myDialog.style.width = '100vw';
+  myDialog.style.height = '100vh';
+  myDialog.style.margin = '0';
+  myDialog.style.border = '0';
   return myDialog;
 }
 
