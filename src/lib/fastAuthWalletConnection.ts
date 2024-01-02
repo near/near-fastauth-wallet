@@ -324,7 +324,7 @@ export class FastAuthWalletConnection {
       }
     });
     return new Promise((resolve) => {
-      const listener = (e) => {
+      const listener = (e: MessageEvent) => {
         if (Object.prototype.hasOwnProperty.call(e.data, 'signedDelegates')) {
           window.removeEventListener('message', listener);
           resolve({
