@@ -324,21 +324,13 @@ export class FastAuthWalletConnection {
       }
     });
     return new Promise((resolve) => {
-      const listener = (e: MessageEvent) => {
-        if (
-          e.data.signedDelegates &&
-          (e.data.signedDelegates
-            .split(',')
-            .some((s: string) =>
-              deserialize(SCHEMA, SignedDelegate, Buffer.from(s, 'base64')),
-            ) ||
-            e.data.signedDelegates.length === 0)
-        ) {
+      const listener = (e) => {
+        if (Object.prototype.hasOwnProperty.call(e.data, 'signedDelegates')) {
           window.removeEventListener('message', listener);
           resolve({
-            signedDelegates: e.data.signedDelegates
+            signedDelegates: e.data.signedDelegates ? e.data.signedDelegates
               .split(',')
-              .map((s: string) => deserialize(SCHEMA, SignedDelegate, Buffer.from(s, 'base64'))),
+              .map((s: string) => deserialize(SCHEMA, SignedDelegate, Buffer.from(s, 'base64'))) : [],
             closeDialog: () => myDialog.close(),
             error: e.data.error
           });
