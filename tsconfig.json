@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "jsx": "react-jsx",
     "rootDir": ".",
     "allowJs": true,
     "sourceMap": true,
@@ -20,7 +21,7 @@
       "near-fastauth-wallet": ["src/index.ts"]
     },
     "types": ["node"],
-    "esModuleInterop": true,
+    "esModuleInterop": true
   },
   "exclude": ["node_modules", "tmp"],
   "files": [],

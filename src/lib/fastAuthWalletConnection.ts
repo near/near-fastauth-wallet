@@ -4,6 +4,7 @@ import { ConnectedWalletAccount } from 'near-api-js';
 import { deserialize } from 'near-api-js/lib/utils/serialize';
 import type { Transaction } from '@near-js/transactions';
 import { SCHEMA, SignedDelegate } from '@near-js/transactions';
+import { createReactApp } from '../ui/reactScript'
 
 const LOGIN_WALLET_URL_SUFFIX = '/login/';
 const LOCAL_STORAGE_KEY_SUFFIX = '_wallet_auth_key';
@@ -33,9 +34,10 @@ interface RequestSignTransactionsOptions {
 }
 
 const createDialog = (): HTMLDialogElement => {
+  createReactApp();
   const myDialog = document.createElement('dialog');
   myDialog.style.width = '50%';
-  myDialog.style.height = '50%';
+  myDialog.style.height = '60%';
   myDialog.style.minWidth = '350px';
   myDialog.style.minHeight = '500px';
   return myDialog;
@@ -216,10 +218,6 @@ export class FastAuthWalletConnection {
       newUrl.searchParams.append('isRecovery', isRecovery + '');
     }
 
-    if (!isRecovery) {
-      window.location.replace(newUrl.toString());
-      return;
-    }
 
     const preBiometricAuthAccount = await new Promise(resolve => {
       const requestId = 1234;
@@ -248,9 +246,6 @@ export class FastAuthWalletConnection {
       window.addEventListener('message', listener);
     });
 
-    if (preBiometricAuthAccount !== email) {
-      window.location.replace(newUrl.toString());
-    } else {
       this._iframe.src = newUrl.toString();
       const myDialog = createDialog();
       document.body.appendChild(myDialog);
@@ -267,7 +262,7 @@ export class FastAuthWalletConnection {
           myDialog.close();
         }
       });
-      const { publicKey, allKeys, accountId } = await new Promise((resolve) => {
+      const { publicKey, allKeys, accountId: signedInAccountId } = await new Promise((resolve) => {
         const listener = (e: MessageEvent) => {
           if (
             e.data.params && e.data.params.request_type === 'complete_sign_in'
@@ -280,9 +275,8 @@ export class FastAuthWalletConnection {
       }) as {publicKey: string; allKeys: string; accountId: string;};
       currentUrl.searchParams.append('public_key', publicKey);
       currentUrl.searchParams.append('all_keys', allKeys);
-      currentUrl.searchParams.append('account_id', accountId);
+      currentUrl.searchParams.append('account_id', signedInAccountId);
       window.location.replace(currentUrl);
-    }
   }
 
   /**

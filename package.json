@@ -5,13 +5,16 @@
   "scripts": {
     "build": "nx build --buildLibsFromSource",
     "test": "nx test",
-    "deploy": "cd dist/near-fastauth-wallet && npm publish"
+    "deploy": "cd dist/near-fastauth-wallet && npm publish",
+    "refresh": "npm unlink $npm_package_name && npm run build && npm link"
   },
   "dependencies": {
     "@near-js/transactions": "^0.2.1",
     "@near-wallet-selector/core": "^8.5.2",
     "@near-wallet-selector/wallet-utils": "^8.5.2",
     "near-api-js": "^2.1.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
@@ -21,6 +24,8 @@
     "@nx/vite": "16.8.1",
     "@nx/workspace": "16.8.1",
     "@types/node": "18.7.1",
+    "@types/react": "^18.2.47",
+    "@types/react-dom": "^18.2.18",
     "@typescript-eslint/eslint-plugin": "^5.60.1",
     "@typescript-eslint/parser": "^5.60.1",
     "@vitest/coverage-c8": "~0.32.0",
@@ -35,6 +40,6 @@
     "vitest": "~0.32.0"
   },
   "type": "commonjs",
-  "main": "./src/index.js",
+  "main": "dist/near-fastauth-wallet/src/index.js",
   "typings": "./src/index.d.ts"
 }
