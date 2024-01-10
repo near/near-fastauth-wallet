@@ -9,7 +9,7 @@ import { ConnectedWalletAccount } from 'near-api-js';
 import { deserialize } from 'near-api-js/lib/utils/serialize';
 import type { Transaction } from '@near-js/transactions';
 import { SCHEMA, SignedDelegate } from '@near-js/transactions';
-import { createReactApp } from '../ui/reactApp';
+import { loadIframeIntoReactApp } from '../ui/reactApp';
 
 const LOGIN_WALLET_URL_SUFFIX = '/login/';
 const LOCAL_STORAGE_KEY_SUFFIX = '_wallet_auth_key';
@@ -232,7 +232,7 @@ export class FastAuthWalletConnection {
       newUrl.searchParams.append('isRecovery', isRecovery + '');
     }
 
-    createReactApp(newUrl.toString());
+    loadIframeIntoReactApp(newUrl.toString());
 
     const {
       publicKey,

@@ -2,7 +2,7 @@ import ReactDOM from 'react-dom/client';
 import IframeUI from './IframeUI';
 import { ChakraProvider } from '@chakra-ui/react';
 
-export const createReactApp = (iframeSrc) => {
+export const loadIframeIntoReactApp = (iframeSrc) => {
   try {
     const rootElement = document.createElement('div');
     rootElement.setAttribute('id', 'nfw');
