@@ -9,18 +9,16 @@
     "refresh": "npm unlink $npm_package_name && npm run build && npm link"
   },
   "dependencies": {
-    "@chakra-ui/react": "^2.8.2",
-    "@emotion/react": "^11.11.3",
-    "@emotion/styled": "^11.11.0",
     "@near-js/transactions": "^0.2.1",
     "@near-wallet-selector/core": "^8.5.2",
     "@near-wallet-selector/wallet-utils": "^8.5.2",
+    "antd": "^5.12.8",
     "class-variance-authority": "^0.7.0",
-    "framer-motion": "^10.17.12",
     "near-api-js": "^2.1.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "usehooks-ts": "^2.9.2"
   },
   "devDependencies": {
     "@nx/eslint-plugin": "16.8.1",
