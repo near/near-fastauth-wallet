@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import IframeUI from './IframeUI';
+import IframeDialog from './IframeDialog';
 
 export const loadIframeViaReactApp = (iframeSrc: string) => {
   const rootElement = document.createElement('div');
@@ -9,5 +9,5 @@ export const loadIframeViaReactApp = (iframeSrc: string) => {
 
   const root = ReactDOM.createRoot(rootElement);
 
-  root.render(<IframeUI iframeSrc={iframeSrc} />);
+  root.render(<IframeDialog iframeSrc={iframeSrc} />);
 };
