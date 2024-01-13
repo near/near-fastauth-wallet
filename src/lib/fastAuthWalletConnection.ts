@@ -9,9 +9,10 @@ import { ConnectedWalletAccount } from 'near-api-js';
 import { deserialize } from 'near-api-js/lib/utils/serialize';
 import type { Transaction } from '@near-js/transactions';
 import { SCHEMA, SignedDelegate } from '@near-js/transactions';
-import { loadIframeIntoReactApp } from '../ui/reactApp';
+import { loadIframeViaReactApp } from '../ui/reactApp';
 
-const LOGIN_WALLET_URL_SUFFIX = '/login/';
+const LOGIN_PATH = '/login/';
+const CREATE_ACCOUNT_PATH = '/create-account/';
 const LOCAL_STORAGE_KEY_SUFFIX = '_wallet_auth_key';
 const PENDING_ACCESS_KEY_PREFIX = 'pending_key'; // browser storage key for a pending access key (i.e. key has been generated but we are not sure it was added yet)
 
@@ -195,7 +196,9 @@ export class FastAuthWalletConnection {
     isRecovery,
   }: SignInOptions) {
     const currentUrl = new URL(window.location.href);
-    const newUrl = new URL(this._walletBaseUrl + LOGIN_WALLET_URL_SUFFIX);
+    const URL_SUFFIX = isRecovery ? LOGIN_PATH : CREATE_ACCOUNT_PATH;
+    const newUrl = new URL(this._walletBaseUrl + URL_SUFFIX);
+
     newUrl.searchParams.set('success_url', successUrl || currentUrl.href);
     newUrl.searchParams.set('failure_url', failureUrl || currentUrl.href);
     if (contractId) {
@@ -232,7 +235,7 @@ export class FastAuthWalletConnection {
       newUrl.searchParams.append('isRecovery', isRecovery + '');
     }
 
-    loadIframeIntoReactApp(newUrl.toString());
+    loadIframeViaReactApp(newUrl.toString());
 
     const {
       publicKey,
