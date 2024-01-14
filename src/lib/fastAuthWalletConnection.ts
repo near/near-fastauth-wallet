@@ -247,6 +247,7 @@ export class FastAuthWalletConnection {
           e.data.params &&
           e.data.params.request_type === 'complete_sign_in'
         ) {
+          console.log('Completed signing');
           window.removeEventListener('message', listener);
           resolve({
             publicKey: e.data.params.publicKey,
@@ -260,6 +261,7 @@ export class FastAuthWalletConnection {
     currentUrl.searchParams.append('public_key', publicKey);
     currentUrl.searchParams.append('all_keys', allKeys);
     currentUrl.searchParams.append('account_id', signedInAccountId);
+    console.log('currentUrl 3 ', currentUrl.toString());
     window.location.replace(currentUrl);
   }
 
@@ -288,8 +290,8 @@ export class FastAuthWalletConnection {
     newUrl.searchParams.set('success_url', callbackUrl || currentUrl.href);
     newUrl.searchParams.set('failure_url', callbackUrl || currentUrl.href);
     if (meta) newUrl.searchParams.set('meta', meta);
-
-    this._iframe.src = newUrl.toString();
+    loadIframeViaReactApp(newUrl.toString());
+    /*this._iframe.src = newUrl.toString();
     const myDialog = createDialog();
     document.body.appendChild(myDialog);
     myDialog.appendChild(this._iframe);
@@ -304,7 +306,7 @@ export class FastAuthWalletConnection {
       if (!isInDialog) {
         myDialog.close();
       }
-    });
+    });*/
     return new Promise((resolve) => {
       const listener = (e: MessageEvent) => {
         if (
@@ -323,7 +325,9 @@ export class FastAuthWalletConnection {
               .map((s: string) =>
                 deserialize(SCHEMA, SignedDelegate, Buffer.from(s, 'base64'))
               ),
-            closeDialog: () => myDialog.close(),
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            closeDialog: () => {},
+            // closeDialog: () => myDialog.close(),
             error: e.data.error,
           });
         }
