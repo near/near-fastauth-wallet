@@ -16,8 +16,9 @@ export const IframeDialog: React.FC<IframeModalProps> = ({ iframeSrc }) => {
     window.addEventListener(
       'message',
       (event) => {
-        if (event.data.iframeDialogHeight)
+        if (event.data.iframeDialogHeight) {
           setDialogHeight(`${event.data.iframeDialogHeight}px`);
+        }
       },
       false
     );
@@ -40,7 +41,7 @@ export const IframeDialog: React.FC<IframeModalProps> = ({ iframeSrc }) => {
     return (
       <Drawer
         placement="bottom"
-        width={500}
+        width="auto"
         onClose={() => setIsOpen(false)}
         open={isOpen}
         contentWrapperStyle={{ height: 'unset' }}
