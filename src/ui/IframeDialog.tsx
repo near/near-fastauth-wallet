@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
 import { Modal, Drawer } from 'antd';
 
@@ -8,25 +8,37 @@ type IframeModalProps = {
 
 export const IframeDialog: React.FC<IframeModalProps> = ({ iframeSrc }) => {
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const onCloseRef = useRef(null);
 
   const [isOpen, setIsOpen] = useState(true);
-  const [dialogHeight, setDialogHeight] = useState('fit-content');
+  const [dialogHeight, setDialogHeight] = useState('0px');
+
+  const handleOnMessage = (event) => {
+    if (event.data.dialogHeight) {
+      setDialogHeight(`${event.data.dialogHeight}px`);
+    }
+
+    if (event.data.onClose) {
+      // Unserialize the onClose function from the string
+      onCloseRef.current = new Function(`return ${event.data.onClose}`)();
+    }
+  };
 
   useEffect(() => {
-    window.addEventListener(
-      'message',
-      (event) => {
-        if (event.data.iframeDialogHeight) {
-          setDialogHeight(`${event.data.iframeDialogHeight}px`);
-        }
-      },
-      false
-    );
+    window.addEventListener('message', handleOnMessage, false);
+    return () => {
+      window.removeEventListener('message', handleOnMessage, false);
+    };
   }, []);
+
+  const handleDialogClose = () => {
+    setIsOpen(false);
+    onCloseRef.current?.();
+  };
 
   const iframe = (
     <iframe
-      id="myIframe"
+      id="nfw-connect-iframe"
       title="Iframe Content"
       src={iframeSrc}
       width="100%"
@@ -42,9 +54,10 @@ export const IframeDialog: React.FC<IframeModalProps> = ({ iframeSrc }) => {
       <Drawer
         placement="bottom"
         width="auto"
-        onClose={() => setIsOpen(false)}
+        onClose={handleDialogClose}
         open={isOpen}
         contentWrapperStyle={{ height: 'unset' }}
+        zIndex={10000}
         styles={{
           header: {
             display: 'none',
@@ -71,9 +84,10 @@ export const IframeDialog: React.FC<IframeModalProps> = ({ iframeSrc }) => {
       centered
       open={isOpen}
       onOk={() => setIsOpen(false)}
-      onCancel={() => setIsOpen(false)}
+      onCancel={handleDialogClose}
       footer={null}
       width="auto"
+      zIndex={10000}
       styles={{
         content: {
           padding: 0,
