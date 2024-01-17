@@ -39,15 +39,6 @@ interface RequestSignTransactionsOptions {
   meta?: string;
 }
 
-const createDialog = (): HTMLDialogElement => {
-  const myDialog = document.createElement('dialog');
-  myDialog.style.width = '50%';
-  myDialog.style.height = '60%';
-  myDialog.style.minWidth = '350px';
-  myDialog.style.minHeight = '500px';
-  return myDialog;
-};
-
 export class FastAuthWalletConnection {
   /** @hidden */
   _walletBaseUrl: string;
