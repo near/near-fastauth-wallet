@@ -9,7 +9,7 @@ import { ConnectedWalletAccount } from 'near-api-js';
 import { deserialize } from 'near-api-js/lib/utils/serialize';
 import type { Transaction } from '@near-js/transactions';
 import { SCHEMA, SignedDelegate } from '@near-js/transactions';
-import { loadIframeViaReactApp } from '../ui/reactApp';
+import { loadIframeDialog } from '../ui/reactApp';
 
 const LOGIN_PATH = '/login/';
 const CREATE_ACCOUNT_PATH = '/create-account/';
@@ -108,11 +108,6 @@ export class FastAuthWalletConnection {
         },
       });
     }
-    const iframe = document.createElement('iframe');
-    iframe.allow = 'publickey-credentials-get *; clipboard-write';
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    this._iframe = iframe;
     this._near = near;
     const authDataKey = appKeyPrefix + LOCAL_STORAGE_KEY_SUFFIX;
     const authData = JSON.parse(
@@ -235,7 +230,7 @@ export class FastAuthWalletConnection {
       newUrl.searchParams.append('isRecovery', isRecovery + '');
     }
 
-    loadIframeViaReactApp(newUrl.toString());
+    loadIframeDialog(newUrl.toString());
 
     const {
       publicKey,
@@ -247,7 +242,6 @@ export class FastAuthWalletConnection {
           e.data.params &&
           e.data.params.request_type === 'complete_sign_in'
         ) {
-          console.log('Completed signing');
           window.removeEventListener('message', listener);
           resolve({
             publicKey: e.data.params.publicKey,
@@ -261,7 +255,6 @@ export class FastAuthWalletConnection {
     currentUrl.searchParams.append('public_key', publicKey);
     currentUrl.searchParams.append('all_keys', allKeys);
     currentUrl.searchParams.append('account_id', signedInAccountId);
-    console.log('currentUrl 3 ', currentUrl.toString());
     window.location.replace(currentUrl);
   }
 
@@ -290,23 +283,8 @@ export class FastAuthWalletConnection {
     newUrl.searchParams.set('success_url', callbackUrl || currentUrl.href);
     newUrl.searchParams.set('failure_url', callbackUrl || currentUrl.href);
     if (meta) newUrl.searchParams.set('meta', meta);
-    loadIframeViaReactApp(newUrl.toString());
-    /*this._iframe.src = newUrl.toString();
-    const myDialog = createDialog();
-    document.body.appendChild(myDialog);
-    myDialog.appendChild(this._iframe);
-    myDialog.showModal();
-    myDialog.addEventListener('click', function (event) {
-      const rect = myDialog.getBoundingClientRect();
-      const isInDialog =
-        rect.top <= event.clientY &&
-        event.clientY <= rect.top + rect.height &&
-        rect.left <= event.clientX &&
-        event.clientX <= rect.left + rect.width;
-      if (!isInDialog) {
-        myDialog.close();
-      }
-    });*/
+    // Loads transaction modal
+    loadIframeDialog(newUrl.toString());
     return new Promise((resolve) => {
       const listener = (e: MessageEvent) => {
         if (
