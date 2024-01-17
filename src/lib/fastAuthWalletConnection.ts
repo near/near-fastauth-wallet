@@ -287,25 +287,22 @@ export class FastAuthWalletConnection {
     loadIframeDialog(newUrl.toString());
     return new Promise((resolve) => {
       const listener = (e: MessageEvent) => {
-        if (
-          e.data.signedDelegates &&
-          (e.data.signedDelegates
-            .split(',')
-            .some((s: string) =>
-              deserialize(SCHEMA, SignedDelegate, Buffer.from(s, 'base64'))
-            ) ||
-            e.data.signedDelegates.length === 0)
-        ) {
+        if (Object.prototype.hasOwnProperty.call(e.data, 'signedDelegates')) {
           window.removeEventListener('message', listener);
           resolve({
             signedDelegates: e.data.signedDelegates
-              .split(',')
-              .map((s: string) =>
-                deserialize(SCHEMA, SignedDelegate, Buffer.from(s, 'base64'))
-              ),
+              ? e.data.signedDelegates
+                  .split(',')
+                  .map((s: string) =>
+                    deserialize(
+                      SCHEMA,
+                      SignedDelegate,
+                      Buffer.from(s, 'base64')
+                    )
+                  )
+              : [],
             // eslint-disable-next-line @typescript-eslint/no-empty-function
             closeDialog: () => {},
-            // closeDialog: () => myDialog.close(),
             error: e.data.error,
           });
         }
