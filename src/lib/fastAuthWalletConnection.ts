@@ -65,9 +65,6 @@ export class FastAuthWalletConnection {
   /** @hidden */
   _completeSignInPromise: Promise<void>;
 
-  /** @hidden */
-  _iframe: HTMLIFrameElement;
-
   constructor(near: Near, appKeyPrefix: string) {
     if (typeof appKeyPrefix !== 'string') {
       throw new Error(
