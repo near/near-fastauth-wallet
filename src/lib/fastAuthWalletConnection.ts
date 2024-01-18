@@ -231,7 +231,7 @@ export class FastAuthWalletConnection {
       const listener = (e: MessageEvent) => {
         if (
           e.data.params &&
-          e.data.params.request_type === 'complete_sign_in'
+          e.data.params.request_type === 'complete_authentication'
         ) {
           window.removeEventListener('message', listener);
           resolve({
@@ -241,12 +241,20 @@ export class FastAuthWalletConnection {
           });
         }
       };
+
       window.addEventListener('message', listener);
-    })) as { publicKey: string; allKeys: string; accountId: string };
-    currentUrl.searchParams.append('public_key', publicKey);
-    currentUrl.searchParams.append('all_keys', allKeys);
-    currentUrl.searchParams.append('account_id', signedInAccountId);
-    window.location.replace(currentUrl);
+    })) as {
+      publicKey: string;
+      allKeys: string;
+      accountId: string;
+    };
+
+    if (publicKey && allKeys && signedInAccountId) {
+      currentUrl.searchParams.append('public_key', publicKey);
+      currentUrl.searchParams.append('all_keys', allKeys);
+      currentUrl.searchParams.append('account_id', signedInAccountId);
+      window.location.replace(currentUrl);
+    }
   }
 
   /**
