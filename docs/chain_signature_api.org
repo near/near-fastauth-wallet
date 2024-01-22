@@ -59,7 +59,7 @@ david.near,,near.org,          An untyped key used on near.org
 
 ** Using a domains bitcoin key
 
-An application at ~near.org~ wants to sign the Bitcoin transaction ~Send 100 BTC~ using the key ~david.near,bitcoin,near.org,~.
+An application at ~near.org~ wants to sign the Bitcoin transaction ~Send 100 BTC~ using the key ~david.near,bitcoin,near.org,~ .
 
 #+begin_src
 Signed ✅
@@ -69,7 +69,7 @@ We sign the transaction without confirmation because the key is owned by near.or
 
 ** Using a personal Bitcoin key
 
-An application at ~near.org~ wants to sign the Bitcoin transaction ~Send 100 BTC~ using the key ~david.near,bitcoin,~.
+An application at ~near.org~ wants to sign the Bitcoin transaction ~Send 100 BTC~ using the key ~david.near,bitcoin,~ .
 
 #+begin_src
 near.org would like to run the following Bitcoin transaction:
@@ -85,8 +85,7 @@ Signed ✅
 #+end_src
 
 ** Using a personal EVM key to sign a Binance transaction
-
-An application at ~near.org~ wants to sign the Binance Smart Chain transaction ~Send 100 BNB, ChainID 56~ using the key ~david.near,evm,~. The wallet knows this is a BSC transaction because of the corresponding ChainID (56) and because the "evm" key is being used.
+An application at ~near.org~ wants to sign the Binance Smart Chain transaction ~Send 100 BNB, ChainID 56~ using the key ~david.near,evm,~ . The wallet knows this is a BSC transaction because of the corresponding ChainID (56) and because the "evm" key is being used.
 
 #+begin_src
 near.org would like to run the following Binance Smart Chain transaction:
@@ -103,7 +102,7 @@ Signed ✅
 
 ** Using an untyped domain key
 
-An application at ~near.org~ wants to sign the Bitcoin transaction ~Send 100 BTC~ using the key ~david.near,,near.org,~.
+An application at ~near.org~ wants to sign the Bitcoin transaction ~Send 100 BTC~ using the key ~david.near,,near.org,~ .
 
 #+begin_src
 Signed ✅
@@ -113,7 +112,7 @@ While this is ill advised, it's still the domains key so the domain can still ch
 
 ** Using another domains Bitcoin key
 
-An application at ~attacker.com~ wants to sign the Bitcoin transaction ~Send 100 BTC~ using the key ~david.near,bitcoin,near.org,~.
+An application at ~attacker.com~ wants to sign the Bitcoin transaction ~Send 100 BTC~ using the key ~david.near,bitcoin,near.org,~ .
 
 #+begin_src
 Attacker.com would like to sign a transaction using your credentials from near.org
