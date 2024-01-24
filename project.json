@@ -33,7 +33,16 @@
         "passWithNoTests": true,
         "reportsDirectory": "coverage/near-fastauth-wallet"
       }
+    },
+    "local-registry": {
+      "executor": "@nx/js:verdaccio",
+      "options": {
+        "port": 4873,
+        "config": ".verdaccio/config.yml",
+        "storage": "tmp/local-registry/storage"
+      }
     }
   },
+
   "tags": []
 }

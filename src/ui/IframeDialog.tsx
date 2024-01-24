@@ -2,29 +2,40 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
 import { Modal, Drawer } from 'antd';
 
-type IframeModalProps = {
+export type IframeModalProps = {
   iframeSrc: string;
   isOpen?: boolean;
+};
+
+type MessageEventData = {
+  dialogHeight?: number;
+  closeIframe?: boolean;
+  onClose?: () => void;
 };
 
 export const IframeDialog: React.FC<IframeModalProps> = ({
   iframeSrc,
   isOpen,
 }) => {
-  const isMobile = useMediaQuery('(max-width: 768px)');
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const onCloseRef = useRef(null);
 
   const [isDialogOpen, setIsDialogOpen] = useState(isOpen);
   const [dialogHeight, setDialogHeight] = useState('0px');
+  const [isIframeLoaded, setIsIframeLoaded] = useState(false);
 
-  const handleOnMessage = (event) => {
+  const handleOnMessage = (event: MessageEvent<MessageEventData>) => {
     if (event.data.dialogHeight) {
       setDialogHeight(`${event.data.dialogHeight}px`);
     }
 
     if (event.data.onClose) {
-      // Unserialize the onClose function from the string
+      // Un-serialize the onClose function from the string
       onCloseRef.current = new Function(`return ${event.data.onClose}`)();
+    }
+
+    if (event.data.closeIframe) {
+      handleDialogClose();
     }
   };
 
@@ -45,7 +56,7 @@ export const IframeDialog: React.FC<IframeModalProps> = ({
     onCloseRef.current?.();
   };
 
-  const iframe = (
+  const iframeElement = (
     <iframe
       id="nfw-connect-iframe"
       title="Iframe Content"
@@ -55,6 +66,7 @@ export const IframeDialog: React.FC<IframeModalProps> = ({
       allowFullScreen
       allow="publickey-credentials-get *; clipboard-write"
       style={{ borderRadius: '12px' }}
+      onLoad={() => setIsIframeLoaded(true)}
     />
   );
 
@@ -67,6 +79,8 @@ export const IframeDialog: React.FC<IframeModalProps> = ({
         open={isDialogOpen}
         contentWrapperStyle={{ height: 'unset' }}
         zIndex={10000}
+        destroyOnClose
+        closeIcon={isIframeLoaded}
         styles={{
           header: {
             display: 'none',
@@ -76,14 +90,16 @@ export const IframeDialog: React.FC<IframeModalProps> = ({
             borderTopRightRadius: '12px',
             borderTopLeftRadius: '12px',
             height: dialogHeight,
+            maxHeight: '80vh',
           },
           body: {
             width: '100%',
             padding: 0,
+            overflow: 'hidden',
           },
         }}
       >
-        {iframe}
+        {iframeElement}
       </Drawer>
     );
   }
@@ -97,6 +113,8 @@ export const IframeDialog: React.FC<IframeModalProps> = ({
       footer={null}
       width="auto"
       zIndex={10000}
+      closeIcon={isIframeLoaded}
+      destroyOnClose
       styles={{
         content: {
           padding: 0,
@@ -108,7 +126,7 @@ export const IframeDialog: React.FC<IframeModalProps> = ({
         },
       }}
     >
-      {iframe}
+      {iframeElement}
     </Modal>
   );
 };
