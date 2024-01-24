@@ -2,7 +2,15 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import IframeDialog from './IframeDialog';
 
-export const loadIframeDialog = (iframeSrc: string) => {
+type LoadIframeOptions = {
+  isOpen?: boolean;
+};
+
+export const loadIframeDialog = (
+  iframeSrc: string,
+  options?: LoadIframeOptions
+) => {
+  const { isOpen = true } = options;
   let rootElement = document.querySelector('#nfw-root');
   if (!rootElement) {
     rootElement = document.createElement('div');
@@ -12,15 +20,14 @@ export const loadIframeDialog = (iframeSrc: string) => {
   document.body.appendChild(rootElement);
 
   // Wait until React is available
-  const checkReact = () => {
+  const renderApp = () => {
     if (React && ReactDOM) {
       const root = ReactDOM.createRoot(rootElement);
-      root.render(<IframeDialog iframeSrc={iframeSrc} />);
+      root.render(<IframeDialog iframeSrc={iframeSrc} isOpen={isOpen} />);
     } else {
-      // Retry after a short delay
-      setTimeout(checkReact, 100);
+      setTimeout(renderApp, 100);
     }
   };
 
-  checkReact();
+  renderApp();
 };

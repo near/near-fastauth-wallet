@@ -4,13 +4,17 @@ import { Modal, Drawer } from 'antd';
 
 type IframeModalProps = {
   iframeSrc: string;
+  isOpen?: boolean;
 };
 
-export const IframeDialog: React.FC<IframeModalProps> = ({ iframeSrc }) => {
+export const IframeDialog: React.FC<IframeModalProps> = ({
+  iframeSrc,
+  isOpen,
+}) => {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const onCloseRef = useRef(null);
 
-  const [isOpen, setIsOpen] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(isOpen);
   const [dialogHeight, setDialogHeight] = useState('0px');
 
   const handleOnMessage = (event) => {
@@ -31,8 +35,13 @@ export const IframeDialog: React.FC<IframeModalProps> = ({ iframeSrc }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof isOpen === 'boolean' && isOpen !== isDialogOpen)
+      setIsDialogOpen(isOpen);
+  }, [isOpen]);
+
   const handleDialogClose = () => {
-    setIsOpen(false);
+    setIsDialogOpen(false);
     onCloseRef.current?.();
   };
 
@@ -55,7 +64,7 @@ export const IframeDialog: React.FC<IframeModalProps> = ({ iframeSrc }) => {
         placement="bottom"
         width="auto"
         onClose={handleDialogClose}
-        open={isOpen}
+        open={isDialogOpen}
         contentWrapperStyle={{ height: 'unset' }}
         zIndex={10000}
         styles={{
@@ -82,8 +91,8 @@ export const IframeDialog: React.FC<IframeModalProps> = ({ iframeSrc }) => {
   return (
     <Modal
       centered
-      open={isOpen}
-      onOk={() => setIsOpen(false)}
+      open={isDialogOpen}
+      onOk={() => setIsDialogOpen(false)}
       onCancel={handleDialogClose}
       footer={null}
       width="auto"
