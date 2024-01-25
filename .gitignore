@@ -37,3 +37,7 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
+
+# Generated as a result of pnpm linking
+pnpm-lock.yaml
+

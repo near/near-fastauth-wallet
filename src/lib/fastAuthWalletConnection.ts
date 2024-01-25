@@ -1,11 +1,18 @@
-import type { InMemorySigner, keyStores, Near, WalletConnection } from 'near-api-js';
+import type {
+  InMemorySigner,
+  keyStores,
+  Near,
+  WalletConnection,
+} from 'near-api-js';
 import { KeyPair, utils } from 'near-api-js';
 import { ConnectedWalletAccount } from 'near-api-js';
 import { deserialize } from 'near-api-js/lib/utils/serialize';
 import type { Transaction } from '@near-js/transactions';
 import { SCHEMA, SignedDelegate } from '@near-js/transactions';
+import { loadIframeDialog } from '../ui/reactApp';
 
-const LOGIN_WALLET_URL_SUFFIX = '/login/';
+const LOGIN_PATH = '/login/';
+const CREATE_ACCOUNT_PATH = '/create-account/';
 const LOCAL_STORAGE_KEY_SUFFIX = '_wallet_auth_key';
 const PENDING_ACCESS_KEY_PREFIX = 'pending_key'; // browser storage key for a pending access key (i.e. key has been generated but we are not sure it was added yet)
 
@@ -30,15 +37,6 @@ interface RequestSignTransactionsOptions {
   callbackUrl?: string;
   /** meta information NEAR Wallet will send back to the application. `meta` will be attached to the `callbackUrl` as a url search param */
   meta?: string;
-}
-
-const createDialog = (): HTMLDialogElement => {
-  const myDialog = document.createElement('dialog');
-  myDialog.style.width = '50%';
-  myDialog.style.height = '50%';
-  myDialog.style.minWidth = '350px';
-  myDialog.style.minHeight = '500px';
-  return myDialog;
 }
 
 export class FastAuthWalletConnection {
@@ -67,13 +65,10 @@ export class FastAuthWalletConnection {
   /** @hidden */
   _completeSignInPromise: Promise<void>;
 
-  /** @hidden */
-  _iframe: HTMLIFrameElement;
-
   constructor(near: Near, appKeyPrefix: string) {
     if (typeof appKeyPrefix !== 'string') {
       throw new Error(
-        'Please define a clear appKeyPrefix for this WalletConnection instance as the second argument to the constructor',
+        'Please define a clear appKeyPrefix for this WalletConnection instance as the second argument to the constructor'
       );
     }
 
@@ -88,11 +83,12 @@ export class FastAuthWalletConnection {
           }
           if (
             target[property as keyof FastAuthWalletConnection] &&
-            typeof target[property as keyof FastAuthWalletConnection] === 'function'
+            typeof target[property as keyof FastAuthWalletConnection] ===
+              'function'
           ) {
             return () => {
               throw new Error(
-                'No window found in context, please ensure you are using WalletConnection on the browser',
+                'No window found in context, please ensure you are using WalletConnection on the browser'
               );
             };
           }
@@ -100,14 +96,11 @@ export class FastAuthWalletConnection {
         },
       });
     }
-    const iframe = document.createElement('iframe');
-    iframe.allow = 'publickey-credentials-get *; clipboard-write';
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    this._iframe = iframe;
     this._near = near;
     const authDataKey = appKeyPrefix + LOCAL_STORAGE_KEY_SUFFIX;
-    const authData = JSON.parse(window.localStorage.getItem(authDataKey) as string);
+    const authData = JSON.parse(
+      window.localStorage.getItem(authDataKey) as string
+    );
     this._networkId = near.config.networkId;
     this._walletBaseUrl = near.config.walletUrl;
     appKeyPrefix = appKeyPrefix || near.config.contractName || 'default';
@@ -186,7 +179,9 @@ export class FastAuthWalletConnection {
     isRecovery,
   }: SignInOptions) {
     const currentUrl = new URL(window.location.href);
-    const newUrl = new URL(this._walletBaseUrl + LOGIN_WALLET_URL_SUFFIX);
+    const URL_SUFFIX = isRecovery ? LOGIN_PATH : CREATE_ACCOUNT_PATH;
+    const newUrl = new URL(this._walletBaseUrl + URL_SUFFIX);
+
     newUrl.searchParams.set('success_url', successUrl || currentUrl.href);
     newUrl.searchParams.set('failure_url', failureUrl || currentUrl.href);
     if (contractId) {
@@ -196,8 +191,15 @@ export class FastAuthWalletConnection {
 
       newUrl.searchParams.set('contract_id', contractId);
       const accessKey = KeyPair.fromRandom('ed25519');
-      newUrl.searchParams.set('public_key', accessKey.getPublicKey().toString());
-      await this._keyStore.setKey(this._networkId, PENDING_ACCESS_KEY_PREFIX + accessKey.getPublicKey(), accessKey);
+      newUrl.searchParams.set(
+        'public_key',
+        accessKey.getPublicKey().toString()
+      );
+      await this._keyStore.setKey(
+        this._networkId,
+        PENDING_ACCESS_KEY_PREFIX + accessKey.getPublicKey(),
+        accessKey
+      );
     }
 
     if (methodNames) {
@@ -216,71 +218,38 @@ export class FastAuthWalletConnection {
       newUrl.searchParams.append('isRecovery', isRecovery + '');
     }
 
-    if (!isRecovery) {
-      window.location.replace(newUrl.toString());
-      return;
-    }
+    loadIframeDialog(newUrl.toString());
 
-    const preBiometricAuthAccount = await new Promise(resolve => {
-      const requestId = 1234;
-      this._iframe.src =  new URL(this._walletBaseUrl + '/rpc/').toString();
-      document.body.appendChild(this._iframe);
+    const {
+      publicKey,
+      allKeys,
+      accountId: signedInAccountId,
+    } = (await new Promise((resolve) => {
       const listener = (e: MessageEvent) => {
         if (
-          e.data.method === 'ready'
-        ) {
-          this._iframe.contentWindow?.postMessage({
-            type: 'method',
-            method: 'query',
-            id: requestId,
-            params: {
-              request_type: 'get_pre_biometric_auth_account'
-            }
-          },'*');
-        }
-        if (
-          e.data.id === requestId
+          e.data.params &&
+          e.data.params.request_type === 'complete_authentication'
         ) {
           window.removeEventListener('message', listener);
-          resolve(e.data.result);
+          resolve({
+            publicKey: e.data.params.publicKey,
+            allKeys: e.data.params.allKeys,
+            accountId: e.data.params.accountId,
+          });
         }
       };
-      window.addEventListener('message', listener);
-    });
 
-    if (preBiometricAuthAccount !== email) {
-      window.location.replace(newUrl.toString());
-    } else {
-      this._iframe.src = newUrl.toString();
-      const myDialog = createDialog();
-      document.body.appendChild(myDialog);
-      myDialog.appendChild(this._iframe);
-      myDialog.showModal();
-      myDialog.addEventListener('click', function (event) {
-        const rect = myDialog.getBoundingClientRect();
-        const isInDialog =
-          rect.top <= event.clientY &&
-          event.clientY <= rect.top + rect.height &&
-          rect.left <= event.clientX &&
-          event.clientX <= rect.left + rect.width;
-        if (!isInDialog) {
-          myDialog.close();
-        }
-      });
-      const { publicKey, allKeys, accountId } = await new Promise((resolve) => {
-        const listener = (e: MessageEvent) => {
-          if (
-            e.data.params && e.data.params.request_type === 'complete_sign_in'
-          ) {
-            window.removeEventListener('message', listener);
-            resolve({ publicKey: e.data.params.publicKey, allKeys: e.data.params.allKeys, accountId: e.data.params.accountId });
-          }
-        };
-        window.addEventListener('message', listener);
-      }) as {publicKey: string; allKeys: string; accountId: string;};
+      window.addEventListener('message', listener);
+    })) as {
+      publicKey: string;
+      allKeys: string;
+      accountId: string;
+    };
+
+    if (publicKey && allKeys && signedInAccountId) {
       currentUrl.searchParams.append('public_key', publicKey);
       currentUrl.searchParams.append('all_keys', allKeys);
-      currentUrl.searchParams.append('account_id', accountId);
+      currentUrl.searchParams.append('account_id', signedInAccountId);
       window.location.replace(currentUrl);
     }
   }
@@ -292,7 +261,11 @@ export class FastAuthWalletConnection {
     transactions,
     meta,
     callbackUrl,
-  }: RequestSignTransactionsOptions): Promise<{ signedDelegates: SignedDelegate[]; closeDialog: () => void; error?: string; }> {
+  }: RequestSignTransactionsOptions): Promise<{
+    signedDelegates: SignedDelegate[];
+    closeDialog: () => void;
+    error?: string;
+  }> {
     const currentUrl = new URL(window.location.href);
     const newUrl = new URL(this._walletBaseUrl + '/sign/');
 
@@ -301,38 +274,32 @@ export class FastAuthWalletConnection {
       transactions
         .map((transaction) => utils.serialize.serialize(SCHEMA, transaction))
         .map((serialized) => Buffer.from(serialized).toString('base64'))
-        .join(','),
+        .join(',')
     );
     newUrl.searchParams.set('success_url', callbackUrl || currentUrl.href);
     newUrl.searchParams.set('failure_url', callbackUrl || currentUrl.href);
     if (meta) newUrl.searchParams.set('meta', meta);
-
-    this._iframe.src = newUrl.toString();
-    const myDialog = createDialog()
-    document.body.appendChild(myDialog);
-    myDialog.appendChild(this._iframe);
-    myDialog.showModal();
-    myDialog.addEventListener('click', function (event) {
-      const rect = myDialog.getBoundingClientRect();
-      const isInDialog =
-        rect.top <= event.clientY &&
-        event.clientY <= rect.top + rect.height &&
-        rect.left <= event.clientX &&
-        event.clientX <= rect.left + rect.width;
-      if (!isInDialog) {
-        myDialog.close();
-      }
-    });
+    // Loads transaction modal
+    loadIframeDialog(newUrl.toString());
     return new Promise((resolve) => {
       const listener = (e: MessageEvent) => {
         if (Object.prototype.hasOwnProperty.call(e.data, 'signedDelegates')) {
           window.removeEventListener('message', listener);
           resolve({
-            signedDelegates: e.data.signedDelegates ? e.data.signedDelegates
-              .split(',')
-              .map((s: string) => deserialize(SCHEMA, SignedDelegate, Buffer.from(s, 'base64'))) : [],
-            closeDialog: () => myDialog.close(),
-            error: e.data.error
+            signedDelegates: e.data.signedDelegates
+              ? e.data.signedDelegates
+                  .split(',')
+                  .map((s: string) =>
+                    deserialize(
+                      SCHEMA,
+                      SignedDelegate,
+                      Buffer.from(s, 'base64')
+                    )
+                  )
+              : [],
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            closeDialog: () => {},
+            error: e.data.error,
           });
         }
       };
@@ -376,9 +343,15 @@ export class FastAuthWalletConnection {
    * @param publicKey The public key being set to the key store
    */
   async _moveKeyFromTempToPermanent(accountId: string, publicKey: string) {
-    const keyPair = await this._keyStore.getKey(this._networkId, PENDING_ACCESS_KEY_PREFIX + publicKey);
+    const keyPair = await this._keyStore.getKey(
+      this._networkId,
+      PENDING_ACCESS_KEY_PREFIX + publicKey
+    );
     await this._keyStore.setKey(this._networkId, accountId, keyPair);
-    await this._keyStore.removeKey(this._networkId, PENDING_ACCESS_KEY_PREFIX + publicKey);
+    await this._keyStore.removeKey(
+      this._networkId,
+      PENDING_ACCESS_KEY_PREFIX + publicKey
+    );
   }
 
   /**
@@ -399,7 +372,7 @@ export class FastAuthWalletConnection {
       this._connectedAccount = new ConnectedWalletAccount(
         this as unknown as WalletConnection,
         this._near.connection,
-        this._authData.accountId as string,
+        this._authData.accountId as string
       );
     }
     return this._connectedAccount;

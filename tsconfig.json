@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "jsx": "react-jsx",
     "rootDir": ".",
     "allowJs": true,
     "sourceMap": true,
@@ -9,7 +10,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "target": "ES2020",
+    "target": "ESNext",
     "module": "CommonJS",
     "lib": ["ESNext", "dom"],
     "skipLibCheck": true,
@@ -17,10 +18,13 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": "./src",
     "paths": {
-      "near-fastauth-wallet": ["src/index.ts"]
+      "near-fastauth-wallet": ["src/index.ts"],
+      "@/ui/*": [
+        "./src/ui/*"
+      ]
     },
     "types": ["node"],
-    "esModuleInterop": true,
+    "esModuleInterop": true
   },
   "exclude": ["node_modules", "tmp"],
   "files": [],
