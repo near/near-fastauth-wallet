@@ -33,7 +33,6 @@ interface FastAuthWalletState {
   near: any;
 }
 
-
 const resolveWalletUrl = (network: Network, walletUrl?: string) => {
   if (walletUrl) {
     return walletUrl;
@@ -49,7 +48,10 @@ const resolveWalletUrl = (network: Network, walletUrl?: string) => {
   }
 };
 
-const setupWalletState = async (params: FastAuthWalletExtraOptions, network: Network): Promise<FastAuthWalletState> => {
+const setupWalletState = async (
+  params: FastAuthWalletExtraOptions,
+  network: Network
+): Promise<FastAuthWalletState> => {
   const keyStore = new nearAPI.keyStores.BrowserLocalStorageKeyStore();
 
   const near = await nearAPI.connect({
@@ -68,13 +70,10 @@ const setupWalletState = async (params: FastAuthWalletExtraOptions, network: Net
   };
 };
 
-const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWalletExtraOptions }> = async ({
-  metadata,
-  options,
-  store,
-  params,
-  logger,
-}) => {
+const FastAuthWallet: WalletBehaviourFactory<
+  BrowserWallet,
+  { params: FastAuthWalletExtraOptions }
+> = async ({ metadata, options, store, params, logger }) => {
   const _state = await setupWalletState(params, options.network);
   let relayerUrl = params.relayerUrl;
   const getAccounts = async (): Promise<Array<Account>> => {
@@ -85,7 +84,10 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
       return [];
     }
 
-    const publicKey = await account.connection.signer.getPublicKey(account.accountId, options.network.networkId);
+    const publicKey = await account.connection.signer.getPublicKey(
+      account.accountId,
+      options.network.networkId
+    );
     return [
       {
         accountId,
@@ -94,7 +96,9 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
     ];
   };
 
-  const transformTransactions = async (transactions: Array<Optional<Transaction, 'signerId'>>) => {
+  const transformTransactions = async (
+    transactions: Array<Optional<Transaction, 'signerId'>>
+  ) => {
     const account = _state.wallet.account();
     const { networkId, signer, provider } = account.connection;
 
@@ -102,11 +106,19 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
 
     return Promise.all(
       transactions.map(async (transaction, index) => {
-        const actions = transaction.actions.map((action) => createAction(action));
-        const accessKey = await account.accessKeyForTransaction(transaction.receiverId, actions, localKey);
+        const actions = transaction.actions.map((action) =>
+          createAction(action)
+        );
+        const accessKey = await account.accessKeyForTransaction(
+          transaction.receiverId,
+          actions,
+          localKey
+        );
 
         if (!accessKey) {
-          throw new Error(`Failed to find matching key for transaction sent to ${transaction.receiverId}`);
+          throw new Error(
+            `Failed to find matching key for transaction sent to ${transaction.receiverId}`
+          );
         }
 
         const block = await provider.block({ finality: 'final' });
@@ -117,14 +129,22 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
           transaction.receiverId,
           accessKey.access_key.nonce + index + 1,
           actions,
-          nearAPI.utils.serialize.base_decode(block.header.hash),
+          nearAPI.utils.serialize.base_decode(block.header.hash)
         );
-      }),
+      })
     );
   };
 
   return {
-    async signIn({ contractId, methodNames, successUrl, failureUrl, email, accountId, isRecovery }: any) {
+    async signIn({
+      contractId,
+      methodNames,
+      successUrl,
+      failureUrl,
+      email,
+      accountId,
+      isRecovery,
+    }: any) {
       const existingAccounts = await getAccounts();
 
       if (existingAccounts.length) {
@@ -161,19 +181,26 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
     async signAndSendTransaction({ receiverId, actions, signerId }) {
       const account = _state.wallet.account();
 
-      const { accessKey } = await account.findAccessKey(receiverId as string, []);
+      const { accessKey } = await account.findAccessKey(
+        receiverId as string,
+        []
+      );
 
       const needsFAK =
-        accessKey.permission !== 'FullAccess' && accessKey.permission.FunctionCall.receiver_id !== receiverId;
+        accessKey.permission !== 'FullAccess' &&
+        accessKey.permission.FunctionCall.receiver_id !== receiverId;
 
       if (needsFAK) {
         const { signer, networkId, provider } = account.connection;
         const block = await provider.block({ finality: 'final' });
-        const localKey = await signer.getPublicKey(account.accountId, networkId);
+        const localKey = await signer.getPublicKey(
+          account.accountId,
+          networkId
+        );
         const txAccessKey = await account.accessKeyForTransaction(
           receiverId as string,
           actions.map(createAction),
-          localKey,
+          localKey
         );
         const transaction = nearAPI.transactions.createTransaction(
           account.accountId,
@@ -181,20 +208,23 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
           receiverId as string,
           txAccessKey.access_key.nonce + 1,
           actions.map(createAction),
-          nearAPI.utils.serialize.base_decode(block.header.hash),
+          nearAPI.utils.serialize.base_decode(block.header.hash)
         );
         const arg = {
           transactions: [transaction],
         };
-        const { closeDialog, signedDelegates } = await _state.wallet.requestSignTransactions(arg);
+        const { closeDialog, signedDelegates } =
+          await _state.wallet.requestSignTransactions(arg);
         closeDialog();
         signedDelegates.forEach((signedDelegate) =>
           fetch(relayerUrl, {
             method: 'POST',
             mode: 'cors',
-            body: JSON.stringify(Array.from(encodeSignedDelegate(signedDelegate))),
+            body: JSON.stringify(
+              Array.from(encodeSignedDelegate(signedDelegate))
+            ),
             headers: new Headers({ 'Content-Type': 'application/json' }),
-          }),
+          })
         );
       } else {
         const signedDelegate = await account.signedDelegate({
@@ -206,7 +236,9 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
         await fetch(relayerUrl, {
           method: 'POST',
           mode: 'cors',
-          body: JSON.stringify(Array.from(encodeSignedDelegate(signedDelegate))),
+          body: JSON.stringify(
+            Array.from(encodeSignedDelegate(signedDelegate))
+          ),
           headers: new Headers({ 'Content-Type': 'application/json' }),
         });
       }
@@ -217,7 +249,10 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
       const { accessKey } = await account.findAccessKey('', []);
 
       const needsFAK = transactions.some(({ receiverId }) => {
-        return accessKey.permission !== 'FullAccess' && accessKey.permission.FunctionCall.receiver_id !== receiverId;
+        return (
+          accessKey.permission !== 'FullAccess' &&
+          accessKey.permission.FunctionCall.receiver_id !== receiverId
+        );
       });
 
       if (needsFAK) {
@@ -225,15 +260,18 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
           transactions: await transformTransactions(transactions),
           callbackUrl,
         };
-        const { closeDialog, signedDelegates } = await _state.wallet.requestSignTransactions(arg);
+        const { closeDialog, signedDelegates } =
+          await _state.wallet.requestSignTransactions(arg);
         closeDialog();
         signedDelegates.forEach((signedDelegate) =>
           fetch(relayerUrl, {
             method: 'POST',
             mode: 'cors',
-            body: JSON.stringify(Array.from(encodeSignedDelegate(signedDelegate))),
+            body: JSON.stringify(
+              Array.from(encodeSignedDelegate(signedDelegate))
+            ),
             headers: new Headers({ 'Content-Type': 'application/json' }),
-          }),
+          })
         );
       } else {
         for (const { receiverId, signerId, actions } of transactions) {
@@ -246,17 +284,22 @@ const FastAuthWallet: WalletBehaviourFactory<BrowserWallet, { params: FastAuthWa
           await fetch(relayerUrl, {
             method: 'POST',
             mode: 'cors',
-            body: JSON.stringify(Array.from(encodeSignedDelegate(signedDelegate))),
+            body: JSON.stringify(
+              Array.from(encodeSignedDelegate(signedDelegate))
+            ),
             headers: new Headers({ 'Content-Type': 'application/json' }),
           });
         }
       }
     },
-    setRelayerUrl({relayerUrl: relayerUrlArg}) {
-      relayerUrl = relayerUrlArg
+    setRelayerUrl({ relayerUrl: relayerUrlArg }) {
+      relayerUrl = relayerUrlArg;
     },
     resetRelayerUrl() {
       relayerUrl = params.relayerUrl;
+    },
+    async signMultiChain() {
+      console.log('calling signAndSendTransactionMultiChain');
     },
   };
 };
