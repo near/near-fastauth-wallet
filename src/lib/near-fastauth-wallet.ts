@@ -10,6 +10,7 @@ import type {
 } from '@near-wallet-selector/core';
 import { createAction } from '@near-wallet-selector/wallet-utils';
 import * as nearAPI from 'near-api-js';
+import BN from 'bn.js';
 
 import icon from './fast-auth-icon';
 import { FastAuthWalletConnection } from './fastAuthWalletConnection';
@@ -292,6 +293,53 @@ const FastAuthWallet: WalletBehaviourFactory<
         }
       }
     },
+    async signMultiChainTransaction({ payload, path }) {
+      const account = _state.wallet.account();
+
+      const functionCall = nearAPI.transactions.functionCall(
+        'sign',
+        {
+          payload, // TODO: Hash the payload
+          path,
+        },
+        new BN('300000000000000'), // TODO: How much is a reasonable amount of gas?
+        0
+      );
+
+      const { signer, networkId, provider } = account.connection;
+      const block = await provider.block({ finality: 'final' });
+      const localKey = await signer.getPublicKey(account.accountId, networkId);
+      const txAccessKey = await account.accessKeyForTransaction(
+        account.accountId,
+        [functionCall],
+        localKey
+      );
+      const transaction = nearAPI.transactions.createTransaction(
+        account.accountId,
+        nearAPI.utils.PublicKey.from(txAccessKey.public_key),
+        account.accountId,
+        txAccessKey.access_key.nonce + 1,
+        [functionCall],
+        nearAPI.utils.serialize.base_decode(block.header.hash)
+      );
+      const arg = {
+        transactions: [transaction],
+      };
+      const { closeDialog, signedDelegates } =
+        await _state.wallet.requestSignTransactions(arg);
+      closeDialog();
+      signedDelegates.forEach(async (signedDelegate) => {
+        const res = await fetch(relayerUrl, {
+          method: 'POST',
+          mode: 'cors',
+          body: JSON.stringify(
+            Array.from(encodeSignedDelegate(signedDelegate))
+          ),
+          headers: new Headers({ 'Content-Type': 'application/json' }),
+        });
+      });
+    },
+
     setRelayerUrl({ relayerUrl: relayerUrlArg }) {
       relayerUrl = relayerUrlArg;
     },
