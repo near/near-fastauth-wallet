@@ -293,16 +293,32 @@ const FastAuthWallet: WalletBehaviourFactory<
         }
       }
     },
-    async signMultiChainTransaction({ payload, path }) {
+    /**
+     * Signs a transaction by calling a smart contract method with the given payload and derivation path.
+     * The payload is expected to be a 32-byte array, and it will be used along with the path in the smart contract method:
+     * pub fn sign(&mut self, payload: [u8; 32], path: String) -> Promise: https://github.com/near/mpc-recovery/blob/94f9c662e2affb2f7bf149c8a0a47649e36e11ba/contract/src/lib.rs#L263
+     * @param {Object} params - The parameters for invoking the smart contract method.
+     * @param {Uint8Array} params.payload - The 32-byte payload to be used in the smart contract method.
+     * @param {string} params.path - The derivation path to be used in the smart contract method.
+     */
+    async signMultiChainTransaction({
+      payload,
+      path,
+    }: {
+      payload: Uint8Array;
+      path: string;
+    }) {
       const account = _state.wallet.account();
+
+      console.log('1');
 
       const functionCall = nearAPI.transactions.functionCall(
         'sign',
         {
-          payload, // TODO: Hash the payload
+          payload,
           path,
         },
-        new BN('300000000000000'), // TODO: How much is a reasonable amount of gas?
+        new BN('2500000000000'), // TODO: How much gos is enough
         0
       );
 
@@ -314,6 +330,7 @@ const FastAuthWallet: WalletBehaviourFactory<
         [functionCall],
         localKey
       );
+      debugger;
       const transaction = nearAPI.transactions.createTransaction(
         account.accountId,
         nearAPI.utils.PublicKey.from(txAccessKey.public_key),
@@ -328,6 +345,7 @@ const FastAuthWallet: WalletBehaviourFactory<
       const { closeDialog, signedDelegates } =
         await _state.wallet.requestSignTransactions(arg);
       closeDialog();
+      console.log('2');
       signedDelegates.forEach(async (signedDelegate) => {
         const res = await fetch(relayerUrl, {
           method: 'POST',
@@ -337,9 +355,10 @@ const FastAuthWallet: WalletBehaviourFactory<
           ),
           headers: new Headers({ 'Content-Type': 'application/json' }),
         });
+        console.log(res);
+        debugger;
       });
     },
-
     setRelayerUrl({ relayerUrl: relayerUrlArg }) {
       relayerUrl = relayerUrlArg;
     },
