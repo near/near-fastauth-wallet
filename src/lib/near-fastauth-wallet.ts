@@ -310,8 +310,6 @@ const FastAuthWallet: WalletBehaviourFactory<
     }) {
       const account = _state.wallet.account();
 
-      console.log('1');
-
       const functionCall = nearAPI.transactions.functionCall(
         'sign',
         {
@@ -330,7 +328,6 @@ const FastAuthWallet: WalletBehaviourFactory<
         [functionCall],
         localKey
       );
-      debugger;
       const transaction = nearAPI.transactions.createTransaction(
         account.accountId,
         nearAPI.utils.PublicKey.from(txAccessKey.public_key),
