@@ -1,26 +1,34 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import IframeDialog from './IframeDialog';
+import IframeDialog, { IframeModalProps } from './IframeDialog';
 
-export const loadIframeDialog = (iframeSrc: string) => {
+type LoadIframeOptions = {
+  isOpen?: boolean;
+};
+
+const DEFAULT_OPTIONS = {
+  isOpen: true,
+};
+
+export const loadIframeDialog = (
+  iframeSrc: string,
+  options?: LoadIframeOptions
+) => {
+  const { isOpen } = options ?? DEFAULT_OPTIONS;
+
+  const IframeDialogWrapper: React.FC<IframeModalProps> = (props) => {
+    // Ensure the component receives the updated isOpen prop
+    return <IframeDialog {...props} isOpen={isOpen} />;
+  };
+
   let rootElement = document.querySelector('#nfw-root');
   if (!rootElement) {
     rootElement = document.createElement('div');
+    rootElement.setAttribute('id', 'nfw-root');
+    document.body.appendChild(rootElement);
   }
-  rootElement.setAttribute('id', 'nfw-root');
-  rootElement.replaceChildren();
-  document.body.appendChild(rootElement);
 
-  // Wait until React is available
-  const checkReact = () => {
-    if (React && ReactDOM) {
-      const root = ReactDOM.createRoot(rootElement);
-      root.render(<IframeDialog iframeSrc={iframeSrc} />);
-    } else {
-      // Retry after a short delay
-      setTimeout(checkReact, 100);
-    }
-  };
-
-  checkReact();
+  ReactDOM.createRoot(rootElement).render(
+    <IframeDialogWrapper iframeSrc={iframeSrc} />
+  );
 };

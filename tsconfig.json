@@ -18,10 +18,8 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": "./src",
     "paths": {
-      "near-fastauth-wallet": ["src/index.ts"],
-      "@/ui/*": [
-        "./src/ui/*"
-      ]
+      "@/ui/*": ["./src/ui/*"],
+      "near-fastauth-wallet": ["src/index.ts"]
     },
     "types": ["node"],
     "esModuleInterop": true
