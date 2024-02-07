@@ -294,24 +294,24 @@ const FastAuthWallet: WalletBehaviourFactory<
       }
     },
     /**
-     * Signs a transaction by calling a smart contract method with the given payload, hashing algorithm configuration, and key path.
-     * The payload is expected to be a byte array, which will be hashed using the specified algorithm and salt before being used in the smart contract method:
-     * pub fn sign(&mut self, hashed_payload: Vec<u8>, key_path: String) -> Promise: https://github.com/near/mpc-recovery/blob/94f9c662e2affb2f7bf149c8a0a47649e36e11ba/contract/src/lib.rs#L263
+     * Signs a transaction by calling a smart contract method with the given payload in a structured format,
+     * hashing algorithm configuration, and key path. The structured payload will be serialized and hashed
+     * using the specified algorithm and salt before being used in the smart contract method.
      * @param {Object} params - The parameters for invoking the smart contract method.
-     * @param {Uint8Array} params.payload - The payload to be hashed and used in the smart contract method.
+     * @param {Object} params.payload - The structured payload to be serialized, hashed, and used in the smart contract method.
      * @param {Object} params.hashingAlgorithmConfig - The configuration for the hashing algorithm, including the name and salt.
      * @param {string} params.hashingAlgorithmConfig.name - The name of the hashing algorithm to be used.
      * @param {Uint8Array} params.hashingAlgorithmConfig.salt - The salt to be used in the hashing process.
-     * @param {string} params.keyPath - The key path to be used in the smart contract method.
+     * @param {string} params.keyPath - The key keyPath to be used in the smart contract method.
      */
     async signMultiChainTransaction({
       payload,
       hashingAlgorithmConfig: { name, salt },
-      path,
+      keyPath,
     }: {
-      payload: Uint8Array;
+      payload: unknown; // TODO: investigate if it's possible to narrow this type
       hashingAlgorithmConfig: { name: string; salt: Uint8Array };
-      path: string;
+      keyPath: string;
     }) {
       const account = _state.wallet.account();
 
@@ -319,9 +319,9 @@ const FastAuthWallet: WalletBehaviourFactory<
         'sign',
         {
           payload,
-          path,
+          keyPath,
         },
-        new BN('2500000000000'), // TODO: How much gos is enough
+        new BN('200000000000000'),
         0
       );
 
