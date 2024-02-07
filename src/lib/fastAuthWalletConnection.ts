@@ -297,8 +297,7 @@ export class FastAuthWalletConnection {
                     )
                   )
               : [],
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
-            closeDialog: () => {},
+            closeDialog: () => undefined,
             error: e.data.error,
           });
         }
