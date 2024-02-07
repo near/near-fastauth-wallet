@@ -294,18 +294,23 @@ const FastAuthWallet: WalletBehaviourFactory<
       }
     },
     /**
-     * Signs a transaction by calling a smart contract method with the given payload and derivation path.
-     * The payload is expected to be a 32-byte array, and it will be used along with the path in the smart contract method:
-     * pub fn sign(&mut self, payload: [u8; 32], path: String) -> Promise: https://github.com/near/mpc-recovery/blob/94f9c662e2affb2f7bf149c8a0a47649e36e11ba/contract/src/lib.rs#L263
+     * Signs a transaction by calling a smart contract method with the given payload, hashing algorithm configuration, and key path.
+     * The payload is expected to be a byte array, which will be hashed using the specified algorithm and salt before being used in the smart contract method:
+     * pub fn sign(&mut self, hashed_payload: Vec<u8>, key_path: String) -> Promise: https://github.com/near/mpc-recovery/blob/94f9c662e2affb2f7bf149c8a0a47649e36e11ba/contract/src/lib.rs#L263
      * @param {Object} params - The parameters for invoking the smart contract method.
-     * @param {Uint8Array} params.payload - The 32-byte payload to be used in the smart contract method.
-     * @param {string} params.path - The derivation path to be used in the smart contract method.
+     * @param {Uint8Array} params.payload - The payload to be hashed and used in the smart contract method.
+     * @param {Object} params.hashingAlgorithmConfig - The configuration for the hashing algorithm, including the name and salt.
+     * @param {string} params.hashingAlgorithmConfig.name - The name of the hashing algorithm to be used.
+     * @param {Uint8Array} params.hashingAlgorithmConfig.salt - The salt to be used in the hashing process.
+     * @param {string} params.keyPath - The key path to be used in the smart contract method.
      */
     async signMultiChainTransaction({
       payload,
+      hashingAlgorithmConfig: { name, salt },
       path,
     }: {
       payload: Uint8Array;
+      hashingAlgorithmConfig: { name: string; salt: Uint8Array };
       path: string;
     }) {
       const account = _state.wallet.account();
