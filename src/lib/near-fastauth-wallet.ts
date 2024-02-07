@@ -346,8 +346,9 @@ const FastAuthWallet: WalletBehaviourFactory<
       };
       const { closeDialog, signedDelegates } =
         await _state.wallet.requestSignTransactions(arg);
+      console.log('1');
       closeDialog();
-      console.log('2');
+
       signedDelegates.forEach(async (signedDelegate) => {
         const res = await fetch(relayerUrl, {
           method: 'POST',
@@ -357,8 +358,8 @@ const FastAuthWallet: WalletBehaviourFactory<
           ),
           headers: new Headers({ 'Content-Type': 'application/json' }),
         });
-        console.log(res);
-        debugger;
+        const resJSON = await res.text();
+        console.log(resJSON);
       });
     },
     setRelayerUrl({ relayerUrl: relayerUrlArg }) {
