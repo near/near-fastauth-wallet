@@ -12,6 +12,7 @@ import { createAction } from '@near-wallet-selector/wallet-utils';
 import * as nearAPI from 'near-api-js';
 import BN from 'bn.js';
 import { createHash } from 'crypto';
+import { serialize } from 'borsh';
 
 import icon from './fast-auth-icon';
 import { FastAuthWalletConnection } from './fastAuthWalletConnection';
@@ -313,20 +314,19 @@ const FastAuthWallet: WalletBehaviourFactory<
       chainId,
       keyPath,
     }: {
-      payload: unknown; 
-      hashingAlgorithmConfig: { 
+      payload: unknown;
+      hashingAlgorithmConfig: {
         name: 'SHA-256' | 'SHA-3' | 'Keccak-256' | 'BLAKE2b';
-        salt: Uint8Array 
+        salt: Uint8Array;
       };
       serializationConfig: {
-        format: 'Borsh' | 'RLP' | 'CustomBinary' | 'Amino'; 
-        schema?: any; 
+        format: 'Borsh' | 'RLP' | 'CustomBinary' | 'Amino';
+        schema?: any;
       };
-      chain: 'Bitcoin' | 'Ethereum' | 'BinanceChain' | 'NEAR'; 
-      chainId?: string; 
+      chain: 'Bitcoin' | 'Ethereum' | 'BinanceChain' | 'NEAR';
+      chainId?: string;
       keyPath: string;
     }) {
-      
       let serializedPayload;
       switch (serializationConfig.format) {
         case 'Borsh':
@@ -334,10 +334,7 @@ const FastAuthWallet: WalletBehaviourFactory<
             throw new Error('Schema is required for Borsh serialization');
           }
           // Serialize using Borsh with the provided schema
-          serializedPayload = nearAPI.utils.serialize.serialize(
-            serializationConfig.schema,
-            payload
-          );
+          serializedPayload = serialize(serializationConfig.schema, payload);
           break;
         // case 'Amino':
         //   if (!serializationConfig.schema) {
@@ -383,13 +380,28 @@ const FastAuthWallet: WalletBehaviourFactory<
           throw new Error('Unsupported hashing algorithm');
       }
 
+      function hexStringToByteArray(hexString) {
+        if (hexString.length % 2 !== 0) {
+          throw 'Invalid hexString';
+        }
+        const byteArray = new Uint8Array(hexString.length / 2);
+        for (let i = 0; i < hexString.length; i += 2) {
+          byteArray[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
+        }
+        return byteArray;
+      }
+
       const account = _state.wallet.account();
 
       const functionCall = nearAPI.transactions.functionCall(
         'sign',
         {
-          payload: hashedPayload,
-          keyPath,
+          // payload: hexStringToByteArray(hashedPayload),
+          payload: [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+            19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+          ],
+          path: "test",
         },
         new BN('200000000000000'),
         0
