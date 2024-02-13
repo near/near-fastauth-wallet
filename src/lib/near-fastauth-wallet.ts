@@ -11,6 +11,7 @@ import type {
 import { createAction } from '@near-wallet-selector/wallet-utils';
 import * as nearAPI from 'near-api-js';
 import BN from 'bn.js';
+import { createHash } from 'crypto';
 
 import icon from './fast-auth-icon';
 import { FastAuthWalletConnection } from './fastAuthWalletConnection';
@@ -307,18 +308,87 @@ const FastAuthWallet: WalletBehaviourFactory<
     async signMultiChainTransaction({
       payload,
       hashingAlgorithmConfig: { name, salt },
+      serializationConfig, // Updated to use serializationConfig object
+      chain,
+      chainId,
       keyPath,
     }: {
-      payload: unknown; // TODO: investigate if it's possible to narrow this type
-      hashingAlgorithmConfig: { name: string; salt: Uint8Array };
+      payload: unknown; 
+      hashingAlgorithmConfig: { 
+        name: 'SHA-256' | 'SHA-3' | 'Keccak-256' | 'BLAKE2b';
+        salt: Uint8Array 
+      };
+      serializationConfig: {
+        format: 'Borsh' | 'RLP' | 'CustomBinary' | 'Amino'; 
+        schema?: any; 
+      };
+      chain: 'Bitcoin' | 'Ethereum' | 'BinanceChain' | 'NEAR'; 
+      chainId?: string; 
       keyPath: string;
     }) {
+      
+      let serializedPayload;
+      switch (serializationConfig.format) {
+        case 'Borsh':
+          if (!serializationConfig.schema) {
+            throw new Error('Schema is required for Borsh serialization');
+          }
+          // Serialize using Borsh with the provided schema
+          serializedPayload = nearAPI.utils.serialize.serialize(
+            serializationConfig.schema,
+            payload
+          );
+          break;
+        // case 'Amino':
+        //   if (!serializationConfig.schema) {
+        //     throw new Error('Schema is required for Amino serialization');
+        //   }
+        //   // Serialize using Amino with the provided schema
+        //   serializedPayload = serializeAmino(serializationConfig.schema, payload);
+        //   break;
+        // case 'RLP':
+        //   // Serialize using RLP (no schema required)
+        //   serializedPayload = serializeRLP(payload);
+        //   break;
+        // case 'CustomBinary':
+        //   // Handle custom binary serialization, which may or may not require a schema
+        //   serializedPayload = serializeCustomBinary(serializationConfig.schema, payload);
+        //   break;
+        default:
+          throw new Error('Unsupported serialization format');
+      }
+
+      const sha256 = createHash('sha256');
+
+      let hashedPayload;
+      switch (name) {
+        case 'SHA-256':
+          hashedPayload = sha256
+            .update(Buffer.from(JSON.stringify(serializedPayload)))
+            .digest('hex');
+          break;
+        // case 'SHA-3':
+        //   const { sha3_256 } = require('js-sha3');
+        //   hashedPayload = sha3_256(Buffer.from(JSON.stringify(serializedPayload)));
+        //   break;
+        // case 'Keccak-256':
+        //   const { keccak256 } = require('js-sha3');
+        //   hashedPayload = keccak256(Buffer.from(JSON.stringify(serializedPayload)));
+        //   break;
+        // case 'BLAKE2b':
+        //   const { blake2bHex } = require('blakejs');
+        //   hashedPayload = blake2bHex(Buffer.from(JSON.stringify(serializedPayload)));
+        //   break;
+        default:
+          throw new Error('Unsupported hashing algorithm');
+      }
+
       const account = _state.wallet.account();
 
       const functionCall = nearAPI.transactions.functionCall(
         'sign',
         {
-          payload,
+          payload: hashedPayload,
           keyPath,
         },
         new BN('200000000000000'),
