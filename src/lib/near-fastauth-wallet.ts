@@ -336,7 +336,7 @@ const FastAuthWallet: WalletBehaviourFactory<
       const transaction = nearAPI.transactions.createTransaction(
         account.accountId,
         nearAPI.utils.PublicKey.from(txAccessKey.public_key),
-        account.accountId,
+        'multichain-testnet-2.testnet',
         txAccessKey.access_key.nonce + 1,
         [functionCall],
         nearAPI.utils.serialize.base_decode(block.header.hash)
@@ -346,7 +346,6 @@ const FastAuthWallet: WalletBehaviourFactory<
       };
       const { closeDialog, signedDelegates } =
         await _state.wallet.requestSignTransactions(arg);
-      console.log('1');
       closeDialog();
 
       signedDelegates.forEach(async (signedDelegate) => {
