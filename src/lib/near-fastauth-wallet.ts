@@ -380,28 +380,35 @@ const FastAuthWallet: WalletBehaviourFactory<
           throw new Error('Unsupported hashing algorithm');
       }
 
-      function hexStringToByteArray(hexString) {
+      function hexStringToUint8Array(hexString) {
         if (hexString.length % 2 !== 0) {
-          throw 'Invalid hexString';
+          throw new Error('Hex string must have an even length');
         }
-        const byteArray = new Uint8Array(hexString.length / 2);
-        for (let i = 0; i < hexString.length; i += 2) {
-          byteArray[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
+
+        const arrayLength = hexString.length / 2;
+        const uint8Array = new Uint8Array(arrayLength);
+
+        for (let i = 0; i < arrayLength; i++) {
+          const byteValue = parseInt(hexString.substr(i * 2, 2), 16);
+          uint8Array[i] = byteValue;
         }
-        return byteArray;
+
+        return uint8Array;
       }
 
       const account = _state.wallet.account();
+      const payloadArr = hexStringToUint8Array(hashedPayload);
+
+      // debugger
 
       const functionCall = nearAPI.transactions.functionCall(
         'sign',
         {
-          // payload: hexStringToByteArray(hashedPayload),
           payload: [
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-            19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2,
+            3, 4, 5, 6, 7, 8, 9, 1, 2,
           ],
-          path: "test",
+          path: 'test',
         },
         new BN('200000000000000'),
         0
