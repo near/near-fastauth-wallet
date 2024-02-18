@@ -16,6 +16,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "antd": "^5.12.8",
     "borsh": "^2.0.0",
+    "bs58": "^5.0.0",
     "class-variance-authority": "^0.7.0",
     "crypto": "^1.0.1",
     "near-api-js": "^2.1.4",
