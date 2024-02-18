@@ -410,7 +410,7 @@ const FastAuthWallet: WalletBehaviourFactory<
           ],
           path: 'test',
         },
-        new BN('2000000000'),
+        new BN('300000000000000'),
         0
       );
 
