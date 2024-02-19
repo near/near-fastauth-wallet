@@ -440,7 +440,7 @@ const FastAuthWallet: WalletBehaviourFactory<
 
       signedDelegates.forEach(async (signedDelegate) => {
         const res = await fetch(
-          'https://relayer-fastauth-testnet-cg7nolnlpa-uc.a.run.app/send_meta_tx_async',
+          'http://near-relayer-testnet.api.pagoda.co/send_meta_tx',
           {
             method: 'POST',
             mode: 'cors',
