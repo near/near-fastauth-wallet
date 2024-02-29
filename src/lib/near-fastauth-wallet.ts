@@ -440,49 +440,49 @@ const FastAuthWallet: WalletBehaviourFactory<
 
       signedDelegates.forEach(async (signedDelegate) => {
         const res = await fetch(
-          'http://near-relayer-testnet.api.pagoda.co/send_meta_tx',
+          'http://near-relayer-testnet.api.pagoda.co/relay',
           {
             method: 'POST',
             mode: 'cors',
-            body: JSON.stringify({
-              delegate_action: {
-                actions: [
-                  {
-                    FunctionCall: {
-                      deposit:
-                        signedDelegate.delegateAction.actions[0].functionCall
-                          .deposit,
-                      args: Buffer.from(
-                        signedDelegate.delegateAction.actions[0].functionCall
-                          .args
-                      ).toString('base64'),
-                      gas: parseInt(
-                        signedDelegate.delegateAction.actions[0].functionCall
-                          .gas,
-                        10
-                      ),
-                      method_name:
-                        signedDelegate.delegateAction.actions[0].functionCall
-                          .methodName,
-                    },
-                  },
-                ],
-                nonce: parseInt(signedDelegate.delegateAction.nonce, 10),
-                max_block_height: parseInt(
-                  signedDelegate.delegateAction.maxBlockHeight,
-                  10
-                ),
-                public_key: signedDelegate.delegateAction.publicKey.toString(),
-                receiver_id: signedDelegate.delegateAction.receiverId,
-                sender_id: signedDelegate.delegateAction.senderId,
-              },
-              signature: `ed25519:${bs58.encode(
-                signedDelegate.signature.data
-              )}`,
-            }),
-            // body: JSON.stringify(
-            //   Array.from(encodeSignedDelegate(signedDelegate))
-            // ),
+            // body: JSON.stringify({
+            //   delegate_action: {
+            //     actions: [
+            //       {
+            //         FunctionCall: {
+            //           deposit:
+            //             signedDelegate.delegateAction.actions[0].functionCall
+            //               .deposit,
+            //           args: Buffer.from(
+            //             signedDelegate.delegateAction.actions[0].functionCall
+            //               .args
+            //           ).toString('base64'),
+            //           gas: parseInt(
+            //             signedDelegate.delegateAction.actions[0].functionCall
+            //               .gas,
+            //             10
+            //           ),
+            //           method_name:
+            //             signedDelegate.delegateAction.actions[0].functionCall
+            //               .methodName,
+            //         },
+            //       },
+            //     ],
+            //     nonce: parseInt(signedDelegate.delegateAction.nonce, 10),
+            //     max_block_height: parseInt(
+            //       signedDelegate.delegateAction.maxBlockHeight,
+            //       10
+            //     ),
+            //     public_key: signedDelegate.delegateAction.publicKey.toString(),
+            //     receiver_id: signedDelegate.delegateAction.receiverId,
+            //     sender_id: signedDelegate.delegateAction.senderId,
+            //   },
+            //   signature: `ed25519:${bs58.encode(
+            //     signedDelegate.signature.data
+            //   )}`,
+            // }),
+            body: JSON.stringify(
+              Array.from(encodeSignedDelegate(signedDelegate))
+            ),
             headers: new Headers({ 'Content-Type': 'application/json' }),
           }
         );
