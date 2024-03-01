@@ -307,100 +307,9 @@ const FastAuthWallet: WalletBehaviourFactory<
      * @param {Uint8Array} params.hashingAlgorithmConfig.salt - The salt to be used in the hashing process.
      * @param {string} params.keyPath - The key keyPath to be used in the smart contract method.
      */
-    async signMultiChainTransaction({
-      payload,
-      hashingAlgorithmConfig: { name, salt },
-      serializationConfig, // Updated to use serializationConfig object
-      chain,
-      chainId,
-      keyPath,
-    }: {
-      payload: unknown;
-      hashingAlgorithmConfig: {
-        name: 'SHA-256' | 'SHA-3' | 'Keccak-256' | 'BLAKE2b';
-        salt: Uint8Array;
-      };
-      serializationConfig: {
-        format: 'Borsh' | 'RLP' | 'CustomBinary' | 'Amino';
-        schema?: any;
-      };
-      chain: 'Bitcoin' | 'Ethereum' | 'BinanceChain' | 'NEAR';
-      chainId?: string;
-      keyPath: string;
-    }) {
-      let serializedPayload;
-      switch (serializationConfig.format) {
-        case 'Borsh':
-          if (!serializationConfig.schema) {
-            throw new Error('Schema is required for Borsh serialization');
-          }
-          // Serialize using Borsh with the provided schema
-          serializedPayload = serialize(serializationConfig.schema, payload);
-          break;
-        // case 'Amino':
-        //   if (!serializationConfig.schema) {
-        //     throw new Error('Schema is required for Amino serialization');
-        //   }
-        //   // Serialize using Amino with the provided schema
-        //   serializedPayload = serializeAmino(serializationConfig.schema, payload);
-        //   break;
-        // case 'RLP':
-        //   // Serialize using RLP (no schema required)
-        //   serializedPayload = serializeRLP(payload);
-        //   break;
-        // case 'CustomBinary':
-        //   // Handle custom binary serialization, which may or may not require a schema
-        //   serializedPayload = serializeCustomBinary(serializationConfig.schema, payload);
-        //   break;
-        default:
-          throw new Error('Unsupported serialization format');
-      }
-
-      const sha256 = createHash('sha256');
-
-      let hashedPayload;
-      switch (name) {
-        case 'SHA-256':
-          hashedPayload = sha256
-            .update(Buffer.from(JSON.stringify(serializedPayload)))
-            .digest('hex');
-          break;
-        // case 'SHA-3':
-        //   const { sha3_256 } = require('js-sha3');
-        //   hashedPayload = sha3_256(Buffer.from(JSON.stringify(serializedPayload)));
-        //   break;
-        // case 'Keccak-256':
-        //   const { keccak256 } = require('js-sha3');
-        //   hashedPayload = keccak256(Buffer.from(JSON.stringify(serializedPayload)));
-        //   break;
-        // case 'BLAKE2b':
-        //   const { blake2bHex } = require('blakejs');
-        //   hashedPayload = blake2bHex(Buffer.from(JSON.stringify(serializedPayload)));
-        //   break;
-        default:
-          throw new Error('Unsupported hashing algorithm');
-      }
-
-      function hexStringToUint8Array(hexString) {
-        if (hexString.length % 2 !== 0) {
-          throw new Error('Hex string must have an even length');
-        }
-
-        const arrayLength = hexString.length / 2;
-        const uint8Array = new Uint8Array(arrayLength);
-
-        for (let i = 0; i < arrayLength; i++) {
-          const byteValue = parseInt(hexString.substr(i * 2, 2), 16);
-          uint8Array[i] = byteValue;
-        }
-
-        return uint8Array;
-      }
-
+    async signMultiChainTransaction() // args: { to: string; value: number }
+    {
       const account = _state.wallet.account();
-      const payloadArr = hexStringToUint8Array(hashedPayload);
-
-      // debugger
 
       const functionCall = nearAPI.transactions.functionCall(
         'sign',
@@ -412,7 +321,7 @@ const FastAuthWallet: WalletBehaviourFactory<
           path: 'test',
         },
         new BN('300000000000000'),
-        0
+        new BN(0)
       );
 
       const { signer, networkId, provider } = account.connection;
@@ -423,17 +332,22 @@ const FastAuthWallet: WalletBehaviourFactory<
         [functionCall],
         localKey
       );
+      const nonce = new BN(txAccessKey.access_key.nonce);
       const transaction = nearAPI.transactions.createTransaction(
         account.accountId,
         nearAPI.utils.PublicKey.from(txAccessKey.public_key),
         'multichain-testnet-2.testnet',
-        txAccessKey.access_key.nonce + 1,
+        nonce.add(new BN(1)),
         [functionCall],
         nearAPI.utils.serialize.base_decode(block.header.hash)
       );
       const arg = {
         transactions: [transaction],
       };
+
+      const accessKey = await account.findAccessKey('', []);
+      console.log('accesskey fast-auth-wallet ', accessKey);
+
       const { closeDialog, signedDelegates } =
         await _state.wallet.requestSignTransactions(arg);
       closeDialog();
