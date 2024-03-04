@@ -353,53 +353,56 @@ const FastAuthWallet: WalletBehaviourFactory<
       closeDialog();
 
       signedDelegates.forEach(async (signedDelegate) => {
-        const res = await fetch(
-          'http://near-relayer-testnet.api.pagoda.co/relay',
-          {
-            method: 'POST',
-            mode: 'cors',
-            // body: JSON.stringify({
-            //   delegate_action: {
-            //     actions: [
-            //       {
-            //         FunctionCall: {
-            //           deposit:
-            //             signedDelegate.delegateAction.actions[0].functionCall
-            //               .deposit,
-            //           args: Buffer.from(
-            //             signedDelegate.delegateAction.actions[0].functionCall
-            //               .args
-            //           ).toString('base64'),
-            //           gas: parseInt(
-            //             signedDelegate.delegateAction.actions[0].functionCall
-            //               .gas,
-            //             10
-            //           ),
-            //           method_name:
-            //             signedDelegate.delegateAction.actions[0].functionCall
-            //               .methodName,
-            //         },
-            //       },
-            //     ],
-            //     nonce: parseInt(signedDelegate.delegateAction.nonce, 10),
-            //     max_block_height: parseInt(
-            //       signedDelegate.delegateAction.maxBlockHeight,
-            //       10
-            //     ),
-            //     public_key: signedDelegate.delegateAction.publicKey.toString(),
-            //     receiver_id: signedDelegate.delegateAction.receiverId,
-            //     sender_id: signedDelegate.delegateAction.senderId,
-            //   },
-            //   signature: `ed25519:${bs58.encode(
-            //     signedDelegate.signature.data
-            //   )}`,
-            // }),
-            body: JSON.stringify(
-              Array.from(encodeSignedDelegate(signedDelegate))
-            ),
-            headers: new Headers({ 'Content-Type': 'application/json' }),
-          }
-        );
+        const res = await fetch('http://34.136.82.88:3030/send_meta_tx_async', {
+          method: 'POST',
+          mode: 'cors',
+          body: JSON.stringify({
+            delegate_action: {
+              actions: [
+                {
+                  FunctionCall: {
+                    deposit:
+                      signedDelegate.delegateAction.actions[0].functionCall
+                        .deposit,
+                    args: Buffer.from(
+                      signedDelegate.delegateAction.actions[0].functionCall.args
+                    ).toString('base64'),
+
+                    gas: parseInt(
+                      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                      // @ts-ignore
+                      signedDelegate.delegateAction.actions[0].functionCall.gas,
+                      10
+                    ),
+                    method_name:
+                      signedDelegate.delegateAction.actions[0].functionCall
+                        .methodName,
+                  },
+                },
+              ],
+              nonce: parseInt(
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                signedDelegate.delegateAction.nonce,
+                10
+              ),
+              max_block_height: parseInt(
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                signedDelegate.delegateAction.maxBlockHeight,
+                10
+              ),
+              public_key: signedDelegate.delegateAction.publicKey.toString(),
+              receiver_id: signedDelegate.delegateAction.receiverId,
+              sender_id: signedDelegate.delegateAction.senderId,
+            },
+            signature: `ed25519:${bs58.encode(signedDelegate.signature.data)}`,
+          }),
+          // body: JSON.stringify(
+          //   Array.from(encodeSignedDelegate(signedDelegate))
+          // ),
+          headers: new Headers({ 'Content-Type': 'application/json' }),
+        });
         const resJSON = await res.text();
         console.log(resJSON);
       });
