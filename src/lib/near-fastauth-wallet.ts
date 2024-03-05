@@ -11,9 +11,8 @@ import type {
 import { createAction } from '@near-wallet-selector/wallet-utils';
 import * as nearAPI from 'near-api-js';
 import BN from 'bn.js';
-import { createHash } from 'crypto';
-import { serialize } from 'borsh';
 import bs58 from 'bs58';
+import { getTransactionLastResult } from '@near-js/utils';
 
 import icon from './fast-auth-icon';
 import { FastAuthWalletConnection } from './fastAuthWalletConnection';
@@ -307,8 +306,7 @@ const FastAuthWallet: WalletBehaviourFactory<
      * @param {Uint8Array} params.hashingAlgorithmConfig.salt - The salt to be used in the hashing process.
      * @param {string} params.keyPath - The key keyPath to be used in the smart contract method.
      */
-    async signMultiChainTransaction() // args: { to: string; value: number }
-    {
+    async signMultiChainTransaction(args: { to: string; amount: number }) {
       const account = _state.wallet.account();
 
       const functionCall = nearAPI.transactions.functionCall(
@@ -345,9 +343,6 @@ const FastAuthWallet: WalletBehaviourFactory<
         transactions: [transaction],
       };
 
-      const accessKey = await account.findAccessKey('', []);
-      console.log('accesskey fast-auth-wallet ', accessKey);
-
       const { closeDialog, signedDelegates } =
         await _state.wallet.requestSignTransactions(arg);
       closeDialog();
@@ -361,35 +356,28 @@ const FastAuthWallet: WalletBehaviourFactory<
               actions: [
                 {
                   FunctionCall: {
-                    deposit:
-                      signedDelegate.delegateAction.actions[0].functionCall
-                        .deposit,
-                    args: Buffer.from(
-                      signedDelegate.delegateAction.actions[0].functionCall.args
-                    ).toString('base64'),
-
-                    gas: parseInt(
-                      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                      // @ts-ignore
-                      signedDelegate.delegateAction.actions[0].functionCall.gas,
-                      10
-                    ),
                     method_name:
                       signedDelegate.delegateAction.actions[0].functionCall
                         .methodName,
+                    args: Buffer.from(
+                      signedDelegate.delegateAction.actions[0].functionCall.args
+                    ).toString('base64'),
+                    gas: parseInt(
+                      signedDelegate.delegateAction.maxBlockHeight.toString(),
+                      10
+                    ),
+                    deposit:
+                      signedDelegate.delegateAction.actions[0].functionCall
+                        .deposit,
                   },
                 },
               ],
               nonce: parseInt(
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                signedDelegate.delegateAction.nonce,
+                signedDelegate.delegateAction.maxBlockHeight.toString(),
                 10
               ),
               max_block_height: parseInt(
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                signedDelegate.delegateAction.maxBlockHeight,
+                signedDelegate.delegateAction.maxBlockHeight.toString(),
                 10
               ),
               public_key: signedDelegate.delegateAction.publicKey.toString(),
@@ -398,13 +386,22 @@ const FastAuthWallet: WalletBehaviourFactory<
             },
             signature: `ed25519:${bs58.encode(signedDelegate.signature.data)}`,
           }),
-          // body: JSON.stringify(
-          //   Array.from(encodeSignedDelegate(signedDelegate))
-          // ),
           headers: new Headers({ 'Content-Type': 'application/json' }),
         });
-        const resJSON = await res.text();
-        console.log(resJSON);
+
+        const txHash = await res.text();
+        const txStatus = await provider.txStatus(txHash, account.accountId);
+        const result = txStatus.receipts_outcome.reduce((acc, curr) => {
+          if (acc) {
+            return acc;
+          } else {
+            return (
+              typeof curr.outcome.status === 'object' &&
+              curr.outcome.status.SuccessValue !== '' &&
+              curr.outcome.status.SuccessValue
+            );
+          }
+        }, undefined);
       });
     },
     setRelayerUrl({ relayerUrl: relayerUrlArg }) {
