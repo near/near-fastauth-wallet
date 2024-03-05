@@ -14,7 +14,8 @@ import BN from 'bn.js';
 
 import icon from './fast-auth-icon';
 import { FastAuthWalletConnection } from './fastAuthWalletConnection';
-import { Signature } from '../utils';
+import { Signature, ChainsConfig } from '../utils';
+import { ethers } from 'ethers';
 
 export interface FastAuthWalletParams {
   walletUrl?: string;
@@ -306,16 +307,22 @@ const FastAuthWallet: WalletBehaviourFactory<
      * @param {Uint8Array} params.hashingAlgorithmConfig.salt - The salt to be used in the hashing process.
      * @param {string} params.keyPath - The key keyPath to be used in the smart contract method.
      */
-    async signMultiChainTransaction(args: { to: string; amount: number }) {
+    async signMultiChainTransaction(args: {
+      to: string;
+      amount: number;
+      chain: ChainsConfig;
+    }) {
       const account = _state.wallet.account();
+
+      const payloadArr = [
+        1, 1, 2, 3, 4, 3, 6, 7, 5, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3,
+        4, 5, 6, 7, 8, 2, 1, 6,
+      ];
 
       const functionCall = nearAPI.transactions.functionCall(
         'sign',
         {
-          payload: [
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2,
-            3, 4, 5, 6, 7, 8, 9, 1, 2,
-          ],
+          payload: payloadArr.slice().reverse(),
           path: 'test',
         },
         new BN('300000000000000'),
@@ -354,7 +361,18 @@ const FastAuthWallet: WalletBehaviourFactory<
           account,
           'http://34.136.82.88:3030'
         );
-        console.log({ r, s, v });
+
+        const transactionHash = ethers.utils.hexlify(payloadArr);
+
+        [0, 1].forEach((v) => {
+          const address = ethers.utils.recoverAddress(transactionHash, {
+            r: `0x${r}`,
+            s: `0x${s}`,
+            v,
+          });
+
+          console.log(address);
+        });
       });
     },
     setRelayerUrl({ relayerUrl: relayerUrlArg }) {

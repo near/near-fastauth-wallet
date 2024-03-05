@@ -31,24 +31,33 @@ export const signMPC = async (
   });
 
   const txHash = await res.text();
-  const txStatus = await account.connection.provider.txStatus(
-    txHash,
-    account.accountId
-  );
 
-  const signature: string = txStatus.receipts_outcome.reduce((acc, curr) => {
-    if (acc) {
-      return acc;
-    } else {
-      const status = curr.outcome.status;
-      return (
-        typeof status === 'object' &&
-        status.SuccessValue &&
-        status.SuccessValue !== '' &&
-        Buffer.from(status.SuccessValue, 'base64').toString('utf-8')
-      );
+  for (let i = 0; i < 3; i++) {
+    const txStatus = await account.connection.provider.txStatus(
+      txHash,
+      account.accountId
+    );
+
+    const signature: string = txStatus.receipts_outcome.reduce((acc, curr) => {
+      if (acc) {
+        return acc;
+      } else {
+        const status = curr.outcome.status;
+        return (
+          typeof status === 'object' &&
+          status.SuccessValue &&
+          status.SuccessValue !== '' &&
+          Buffer.from(status.SuccessValue, 'base64').toString('utf-8')
+        );
+      }
+    }, '');
+
+    if (signature) {
+      return toRVS(signature);
     }
-  }, '');
 
-  return toRVS(signature);
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+  }
+
+  console.error('Signature error, please retry');
 };
