@@ -14,7 +14,7 @@ import BN from 'bn.js';
 
 import icon from './fast-auth-icon';
 import { FastAuthWalletConnection } from './fastAuthWalletConnection';
-import { Relayer, Signature } from '../utils';
+import { Signature } from '../utils';
 
 export interface FastAuthWalletParams {
   walletUrl?: string;
@@ -330,6 +330,7 @@ const FastAuthWallet: WalletBehaviourFactory<
         [functionCall],
         localKey
       );
+
       const nonce = new BN(txAccessKey.access_key.nonce);
       const transaction = nearAPI.transactions.createTransaction(
         account.accountId,
@@ -348,36 +349,12 @@ const FastAuthWallet: WalletBehaviourFactory<
       closeDialog();
 
       signedDelegates.forEach(async (signedDelegate) => {
-        const res = await fetch('http://34.136.82.88:3030/send_meta_tx_async', {
-          method: 'POST',
-          mode: 'cors',
-          body: JSON.stringify(
-            Relayer.parseSignedDelegateForRelayer(signedDelegate)
-          ),
-          headers: new Headers({ 'Content-Type': 'application/json' }),
-        });
-
-        const txHash = await res.text();
-        const txStatus = await provider.txStatus(txHash, account.accountId);
-
-        const signature: string = txStatus.receipts_outcome.reduce(
-          (acc, curr) => {
-            if (acc) {
-              return acc;
-            } else {
-              const status = curr.outcome.status;
-              return (
-                typeof status === 'object' &&
-                status.SuccessValue &&
-                status.SuccessValue !== '' &&
-                Buffer.from(status.SuccessValue, 'base64').toString('utf-8')
-              );
-            }
-          },
-          ''
+        const { r, s, v } = await Signature.signMPC(
+          signedDelegate,
+          account,
+          'http://34.136.82.88:3030'
         );
-
-        const { r, v, s } = Signature.toRVSignature(signature);
+        console.log({ r, s, v });
       });
     },
     setRelayerUrl({ relayerUrl: relayerUrlArg }) {
