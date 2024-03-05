@@ -11,11 +11,10 @@ import type {
 import { createAction } from '@near-wallet-selector/wallet-utils';
 import * as nearAPI from 'near-api-js';
 import BN from 'bn.js';
-import bs58 from 'bs58';
-import { getTransactionLastResult } from '@near-js/utils';
 
 import icon from './fast-auth-icon';
 import { FastAuthWalletConnection } from './fastAuthWalletConnection';
+import { parseSignedDelegateForRelayer } from '../utils/signedDelegate';
 export interface FastAuthWalletParams {
   walletUrl?: string;
   iconUrl?: string;
@@ -351,41 +350,7 @@ const FastAuthWallet: WalletBehaviourFactory<
         const res = await fetch('http://34.136.82.88:3030/send_meta_tx_async', {
           method: 'POST',
           mode: 'cors',
-          body: JSON.stringify({
-            delegate_action: {
-              actions: [
-                {
-                  FunctionCall: {
-                    method_name:
-                      signedDelegate.delegateAction.actions[0].functionCall
-                        .methodName,
-                    args: Buffer.from(
-                      signedDelegate.delegateAction.actions[0].functionCall.args
-                    ).toString('base64'),
-                    gas: parseInt(
-                      signedDelegate.delegateAction.maxBlockHeight.toString(),
-                      10
-                    ),
-                    deposit:
-                      signedDelegate.delegateAction.actions[0].functionCall
-                        .deposit,
-                  },
-                },
-              ],
-              nonce: parseInt(
-                signedDelegate.delegateAction.maxBlockHeight.toString(),
-                10
-              ),
-              max_block_height: parseInt(
-                signedDelegate.delegateAction.maxBlockHeight.toString(),
-                10
-              ),
-              public_key: signedDelegate.delegateAction.publicKey.toString(),
-              receiver_id: signedDelegate.delegateAction.receiverId,
-              sender_id: signedDelegate.delegateAction.senderId,
-            },
-            signature: `ed25519:${bs58.encode(signedDelegate.signature.data)}`,
-          }),
+          body: JSON.stringify(parseSignedDelegateForRelayer(signedDelegate)),
           headers: new Headers({ 'Content-Type': 'application/json' }),
         });
 
@@ -402,6 +367,7 @@ const FastAuthWallet: WalletBehaviourFactory<
             );
           }
         }, undefined);
+        console.log(result);
       });
     },
     setRelayerUrl({ relayerUrl: relayerUrlArg }) {
