@@ -14,7 +14,8 @@ import BN from 'bn.js';
 
 import icon from './fast-auth-icon';
 import { FastAuthWalletConnection } from './fastAuthWalletConnection';
-import { parseSignedDelegateForRelayer } from '../utils/signedDelegate';
+import { Relayer, Signature } from '../utils';
+
 export interface FastAuthWalletParams {
   walletUrl?: string;
   iconUrl?: string;
@@ -350,24 +351,33 @@ const FastAuthWallet: WalletBehaviourFactory<
         const res = await fetch('http://34.136.82.88:3030/send_meta_tx_async', {
           method: 'POST',
           mode: 'cors',
-          body: JSON.stringify(parseSignedDelegateForRelayer(signedDelegate)),
+          body: JSON.stringify(
+            Relayer.parseSignedDelegateForRelayer(signedDelegate)
+          ),
           headers: new Headers({ 'Content-Type': 'application/json' }),
         });
 
         const txHash = await res.text();
         const txStatus = await provider.txStatus(txHash, account.accountId);
-        const result = txStatus.receipts_outcome.reduce((acc, curr) => {
-          if (acc) {
-            return acc;
-          } else {
-            return (
-              typeof curr.outcome.status === 'object' &&
-              curr.outcome.status.SuccessValue !== '' &&
-              curr.outcome.status.SuccessValue
-            );
-          }
-        }, undefined);
-        console.log(result);
+
+        const signature: string = txStatus.receipts_outcome.reduce(
+          (acc, curr) => {
+            if (acc) {
+              return acc;
+            } else {
+              const status = curr.outcome.status;
+              return (
+                typeof status === 'object' &&
+                status.SuccessValue &&
+                status.SuccessValue !== '' &&
+                Buffer.from(status.SuccessValue, 'base64').toString('utf-8')
+              );
+            }
+          },
+          ''
+        );
+
+        const { r, v, s } = Signature.toRVSignature(signature);
       });
     },
     setRelayerUrl({ relayerUrl: relayerUrlArg }) {
