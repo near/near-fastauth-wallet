@@ -57,6 +57,8 @@ david.near,,near.org,          An untyped key used on near.org
 
 * Example Flows
 
+The following flows omit showing the cost of transaction fees. For those flows [[file:transaction_fees.org][see here]].
+
 ** Using a domains bitcoin key
 
 An application at =near.org= wants to sign the Bitcoin transaction =Send 100 BTC= using the key =david.near,bitcoin,near.org,= .
@@ -130,3 +132,84 @@ Signed ✅
 #+end_src
 
 The correct way for =attacker.com= to make this request is to somehow redirect the user to =near.org= and get the user to make a decision there.
+
+
+* Design
+
+Any key derivation format should have the following properties:
+
+1. Canonical: for a given set of inputs the derivation path must always be the same or you'll get different keys.
+2. Extensible: You can add new optional information without changing how old keys serialize.
+3. Compact: otherwise it will increase the size of our transactions substantially.[fn:1]
+4. Compatible: It must be easy to serialize from many languages
+
+As such a few options have been considered.
+
+** Borsh
+
+[[https://borsh.io/][Borsh]] is our very own encoding format and it does 1,3 and 4 well, but it's not possible to add optional fields without changing the encoding format. Each non existent optional field is marked by a byte with a value of 0. This means that you don't need to know the type of an optional field up-front. This means:
+
+#+begin_src rust
+{
+    a: A,
+    b: Option<!>,
+}
+#+end_src
+
+can be migrated to:
+
+#+begin_src rust
+{
+    a: A,
+    b: Option<B>,
+}
+#+end_src
+
+Without any change to the encoding.
+
+Therefore, if we were feeling like masochists, we could do the following version strategy:
+
+#+begin_src rust
+struct V1 {
+    chain: Option<String>,
+    domain: Option<String>,
+    metadata: Option<[u8]>,
+    v2: Option<!>
+}
+
+struct V2 {
+    moon_phase: u8,
+    // Change when we reach API version 3
+    v3: Option<!>
+}
+#+end_src
+
+Any compliant borsh implementation will serialize this correctly, effectively we're implementing protobuf in borsh.
+
+** BIP-44
+
+[[https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki][BIP-44]] is a key derivation format for cryptocurrencies which sounds perfect!
+
+Briefly described it's:
+
+#+begin_src
+m / purpose': 44 / coin_type': SLIP-44 type / account':int / change: 0|1 / address_index:int
+#+end_src
+
+Unfortunately we use our key derivation for substantially different way to BIP-44 users.
+
+1. We don't currently derive our key using BIP-33, so BIP-44 key paths won't make key derivation libraries work
+2. We want to include domains in our key derivations, we could encode index in purpose, but we'd be off spec
+3. The coin types make every chain have a different derivation path. We want to allow for sharing keys between EVM chain.
+
+** Canonicalized Protobuf/Capnproto
+
+These encoding formats have canonical formats, but actually encoding these is often not simple to support in different languages. It's also pretty easy to do this a bit wrong when you try to hand roll canonicalization yourself, which will lead to peoples assets ending up in a weird spot. Protobuf tooling also tends to be fairly heavyweight.
+
+** Comma separated values
+
+We initially used a version of comma separated values, which fits all the criteria, but every client language would have to implement it and many edge cases (data containing commas?) weren't covered in the spec. Fundamentally designing a brand new serialization format is normally a bad idea.
+
+* Footnotes
+
+[fn:1] This could perhaps be avoided by doing a hash of the derivation format.
