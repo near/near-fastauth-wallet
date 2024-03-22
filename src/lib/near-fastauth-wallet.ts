@@ -3,6 +3,7 @@ import type {
   Account,
   BrowserWallet,
   Network,
+  NetworkId,
   Optional,
   Transaction,
   WalletBehaviourFactory,
@@ -10,12 +11,18 @@ import type {
 } from '@near-wallet-selector/core';
 import { createAction } from '@near-wallet-selector/wallet-utils';
 import * as nearAPI from 'near-api-js';
-import BN from 'bn.js';
 
 import icon from './fast-auth-icon';
 import { FastAuthWalletConnection } from './fastAuthWalletConnection';
-import { Signature, ChainsConfig } from '../utils';
-import { ethers } from 'ethers';
+import {
+  fetchDerivedEVMAddress,
+  fetchDerivedBTCAddressAndPublicKey,
+} from 'utils/multi-chain/utils';
+import {
+  NearNetworkIds,
+  ChainSignatureContracts,
+  BTCNetworkIds,
+} from 'utils/multi-chain/types';
 
 export interface FastAuthWalletParams {
   walletUrl?: string;
@@ -35,6 +42,23 @@ interface FastAuthWalletState {
   wallet: FastAuthWalletConnection;
   keyStore: nearAPI.keyStores.BrowserLocalStorageKeyStore;
   near: any;
+}
+
+interface DerivedAddressParamEVM {
+  type: 'EVM';
+  signerId: string;
+  path: string;
+  networkId: NearNetworkIds;
+  contract: ChainSignatureContracts;
+}
+
+interface DerivedAddressParamBTC {
+  type: 'BTC';
+  signerId: string;
+  path: string;
+  networkId: NetworkId;
+  btcNetworkId: BTCNetworkIds;
+  contract: ChainSignatureContracts;
 }
 
 const resolveWalletUrl = (network: Network, walletUrl?: string) => {
@@ -294,6 +318,29 @@ const FastAuthWallet: WalletBehaviourFactory<
             headers: new Headers({ 'Content-Type': 'application/json' }),
           });
         }
+      }
+    },
+    async getDerivedAddress(
+      args: DerivedAddressParamEVM | DerivedAddressParamBTC
+    ) {
+      if (args.type === 'EVM') {
+        return await fetchDerivedEVMAddress(
+          args.signerId,
+          args.path,
+          args.networkId,
+          args.contract
+        );
+      } else if (args.type === 'BTC') {
+        const { address } = await fetchDerivedBTCAddressAndPublicKey(
+          args.signerId,
+          args.path,
+          args.networkId,
+          args.btcNetworkId,
+          args.contract
+        );
+        return address;
+      } else {
+        throw new Error('Unsupported chain type');
       }
     },
     async signMultiChainTransaction() {
