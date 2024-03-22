@@ -296,84 +296,8 @@ const FastAuthWallet: WalletBehaviourFactory<
         }
       }
     },
-    /**
-     * Signs a transaction by calling a smart contract method with the given payload in a structured format,
-     * hashing algorithm configuration, and key path. The structured payload will be serialized and hashed
-     * using the specified algorithm and salt before being used in the smart contract method.
-     * @param {Object} params - The parameters for invoking the smart contract method.
-     * @param {Object} params.payload - The structured payload to be serialized, hashed, and used in the smart contract method.
-     * @param {Object} params.hashingAlgorithmConfig - The configuration for the hashing algorithm, including the name and salt.
-     * @param {string} params.hashingAlgorithmConfig.name - The name of the hashing algorithm to be used.
-     * @param {Uint8Array} params.hashingAlgorithmConfig.salt - The salt to be used in the hashing process.
-     * @param {string} params.keyPath - The key keyPath to be used in the smart contract method.
-     */
-    async signMultiChainTransaction(args: {
-      to: string;
-      amount: number;
-      chain: ChainsConfig;
-    }) {
-      const account = _state.wallet.account();
-
-      const payloadArr = [
-        1, 1, 2, 3, 4, 3, 6, 7, 5, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3,
-        4, 5, 6, 7, 8, 2, 1, 6,
-      ];
-
-      const functionCall = nearAPI.transactions.functionCall(
-        'sign',
-        {
-          payload: payloadArr.slice().reverse(),
-          path: 'test',
-        },
-        new BN('300000000000000'),
-        new BN(0)
-      );
-
-      const { signer, networkId, provider } = account.connection;
-      const block = await provider.block({ finality: 'final' });
-      const localKey = await signer.getPublicKey(account.accountId, networkId);
-      const txAccessKey = await account.accessKeyForTransaction(
-        account.accountId,
-        [functionCall],
-        localKey
-      );
-
-      const nonce = new BN(txAccessKey.access_key.nonce);
-      const transaction = nearAPI.transactions.createTransaction(
-        account.accountId,
-        nearAPI.utils.PublicKey.from(txAccessKey.public_key),
-        'multichain-testnet-2.testnet',
-        nonce.add(new BN(1)),
-        [functionCall],
-        nearAPI.utils.serialize.base_decode(block.header.hash)
-      );
-      const arg = {
-        transactions: [transaction],
-      };
-
-      const { closeDialog, signedDelegates } =
-        await _state.wallet.requestSignTransactions(arg);
-      closeDialog();
-
-      signedDelegates.forEach(async (signedDelegate) => {
-        const { r, s, v } = await Signature.signMPC(
-          signedDelegate,
-          account,
-          'http://34.136.82.88:3030'
-        );
-
-        const transactionHash = ethers.utils.hexlify(payloadArr);
-
-        [0, 1].forEach((v) => {
-          const address = ethers.utils.recoverAddress(transactionHash, {
-            r: `0x${r}`,
-            s: `0x${s}`,
-            v,
-          });
-
-          console.log(address);
-        });
-      });
+    async signMultiChainTransaction() {
+      console.log('calling signMultiChainTransaction');
     },
     setRelayerUrl({ relayerUrl: relayerUrlArg }) {
       relayerUrl = relayerUrlArg;
