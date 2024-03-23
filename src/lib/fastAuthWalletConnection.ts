@@ -376,4 +376,57 @@ export class FastAuthWalletConnection {
     }
     return this._connectedAccount;
   }
+
+  async requestSignMultiChain(data: {
+    derivationPath: string;
+    to: string;
+    value: bigint;
+  }) {
+    console.log('3');
+    const newUrl = new URL(this._walletBaseUrl + '/sign-multichain/');
+
+    const iframe = await loadIframeDialog(newUrl.toString());
+
+    return new Promise((resolve, reject) => {
+      const waitForPageLoad = () =>
+        new Promise((resolve, reject) => {
+          const checkPageLoad = (event) => {
+            if (
+              event.data.type === 'sign-multichain-load' &&
+              event.data.message === 'SignMultichain page has loaded'
+            ) {
+              window.removeEventListener('message', checkPageLoad);
+              resolve('Page loaded successfully');
+            }
+          };
+
+          window.addEventListener('message', checkPageLoad);
+
+          setTimeout(() => {
+            window.removeEventListener('message', checkPageLoad);
+            reject('Page load timeout');
+          }, 500); // Timeout after 10 seconds
+        });
+
+      waitForPageLoad()
+        .then(() => {
+          const messageHandler = function listener(event) {
+            console.log('app: ', event.origin);
+          };
+
+          window.addEventListener('message', messageHandler);
+
+          iframe.contentWindow.postMessage(
+            {
+              type: 'multi-chain',
+              data,
+            },
+            '*'
+          );
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    });
+  }
 }

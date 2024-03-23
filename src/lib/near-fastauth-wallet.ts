@@ -23,6 +23,7 @@ import {
   ChainSignatureContracts,
   BTCNetworkIds,
 } from '../utils/multi-chain/types';
+import { loadIframeDialog } from '../ui/reactApp';
 
 export interface FastAuthWalletParams {
   walletUrl?: string;
@@ -343,8 +344,12 @@ const FastAuthWallet: WalletBehaviourFactory<
         throw new Error('Unsupported chain type');
       }
     },
-    async signMultiChainTransaction() {
-      console.log('calling signMultiChainTransaction');
+    async signMultiChainTransaction(data: {
+      derivationPath: string;
+      to: string;
+      value: bigint;
+    }) {
+      await _state.wallet.requestSignMultiChain(data);
     },
     setRelayerUrl({ relayerUrl: relayerUrlArg }) {
       relayerUrl = relayerUrlArg;
