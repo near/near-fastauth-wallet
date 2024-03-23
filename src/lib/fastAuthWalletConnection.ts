@@ -382,51 +382,52 @@ export class FastAuthWalletConnection {
     to: string;
     value: bigint;
   }) {
-    console.log('3');
     const newUrl = new URL(this._walletBaseUrl + '/sign-multichain/');
-
     const iframe = await loadIframeDialog(newUrl.toString());
 
-    return new Promise((resolve, reject) => {
-      const waitForPageLoad = () =>
-        new Promise((resolve, reject) => {
-          const checkPageLoad = (event) => {
-            if (
-              event.data.type === 'sign-multichain-load' &&
-              event.data.message === 'SignMultichain page has loaded'
-            ) {
-              window.removeEventListener('message', checkPageLoad);
-              resolve('Page loaded successfully');
-            }
-          };
-
-          window.addEventListener('message', checkPageLoad);
-
-          setTimeout(() => {
+    const waitForPageLoad = (): Promise<string> =>
+      new Promise((innerResolve, innerReject) => {
+        const checkPageLoad = (event: MessageEvent): void => {
+          if (
+            event.data.type === 'sign-multichain-load' &&
+            event.data.message === 'SignMultichain page has loaded'
+          ) {
             window.removeEventListener('message', checkPageLoad);
-            reject('Page load timeout');
-          }, 500); // Timeout after 10 seconds
-        });
+            innerResolve('Page loaded successfully');
+          }
+        };
 
-      waitForPageLoad()
-        .then(() => {
-          const messageHandler = function listener(event) {
-            console.log('app: ', event.origin);
-          };
+        window.addEventListener('message', checkPageLoad);
 
-          window.addEventListener('message', messageHandler);
+        setTimeout(() => {
+          window.removeEventListener('message', checkPageLoad);
+          innerReject('Page load timeout');
+        }, 500);
+      });
 
-          iframe.contentWindow.postMessage(
-            {
-              type: 'multi-chain',
-              data,
-            },
-            '*'
-          );
-        })
-        .catch((error) => {
-          console.error(error);
-        });
+    try {
+      await waitForPageLoad();
+
+      iframe.contentWindow?.postMessage(
+        {
+          type: 'multi-chain',
+          data,
+        },
+        '*'
+      );
+    } catch (error) {
+      console.error(error);
+    }
+
+    return new Promise((resolve) => {
+      const listener = (event: MessageEvent): void => {
+        if (event.data.type === 'multiChain') {
+          window.removeEventListener('message', listener);
+          resolve(event.data);
+        }
+      };
+
+      window.addEventListener('message', listener);
     });
   }
 }

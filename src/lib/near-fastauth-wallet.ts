@@ -23,7 +23,6 @@ import {
   ChainSignatureContracts,
   BTCNetworkIds,
 } from '../utils/multi-chain/types';
-import { loadIframeDialog } from '../ui/reactApp';
 
 export interface FastAuthWalletParams {
   walletUrl?: string;
