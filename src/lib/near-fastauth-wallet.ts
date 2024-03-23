@@ -17,12 +17,12 @@ import { FastAuthWalletConnection } from './fastAuthWalletConnection';
 import {
   fetchDerivedEVMAddress,
   fetchDerivedBTCAddressAndPublicKey,
-} from 'utils/multi-chain/utils';
+} from '../utils/multi-chain/utils';
 import {
   NearNetworkIds,
   ChainSignatureContracts,
   BTCNetworkIds,
-} from 'utils/multi-chain/types';
+} from '../utils/multi-chain/types';
 
 export interface FastAuthWalletParams {
   walletUrl?: string;

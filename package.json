@@ -18,6 +18,7 @@
     "bitcoinjs-lib": "^6.1.5",
     "bs58": "^5.0.0",
     "class-variance-authority": "^0.7.0",
+    "elliptic": "^6.5.5",
     "ethers": "^6.11.1",
     "near-api-js": "^2.1.4",
     "tslib": "^2.3.0",
