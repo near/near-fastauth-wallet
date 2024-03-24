@@ -388,10 +388,7 @@ export class FastAuthWalletConnection {
     const waitForPageLoad = (): Promise<string> =>
       new Promise((innerResolve, innerReject) => {
         const checkPageLoad = (event: MessageEvent): void => {
-          if (
-            event.data.type === 'sign-multichain-load' &&
-            event.data.message === 'SignMultichain page has loaded'
-          ) {
+          if (event.data.type === 'signMultiChainLoaded') {
             window.removeEventListener('message', checkPageLoad);
             innerResolve('Page loaded successfully');
           }
@@ -410,7 +407,7 @@ export class FastAuthWalletConnection {
 
       iframe.contentWindow?.postMessage(
         {
-          type: 'multi-chain',
+          type: 'multiChainRequest',
           data,
         },
         '*'
@@ -421,7 +418,7 @@ export class FastAuthWalletConnection {
 
     return new Promise((resolve) => {
       const listener = (event: MessageEvent): void => {
-        if (event.data.type === 'multiChain') {
+        if (event.data.type === 'multiChainResponse') {
           window.removeEventListener('message', listener);
           resolve(event.data);
         }
