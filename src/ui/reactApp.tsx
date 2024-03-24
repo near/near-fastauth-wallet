@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import IframeDialog, { IframeModalProps } from './IframeDialog';
 
@@ -13,22 +13,34 @@ const DEFAULT_OPTIONS = {
 export const loadIframeDialog = (
   iframeSrc: string,
   options?: LoadIframeOptions
-) => {
-  const { isOpen } = options ?? DEFAULT_OPTIONS;
+): Promise<HTMLIFrameElement> => {
+  return new Promise((resolve) => {
+    const { isOpen } = options ?? DEFAULT_OPTIONS;
 
-  const IframeDialogWrapper: React.FC<IframeModalProps> = (props) => {
-    // Ensure the component receives the updated isOpen prop
-    return <IframeDialog {...props} isOpen={isOpen} />;
-  };
+    const IframeDialogWrapper: React.FC<IframeModalProps> = (props) => {
+      const [iframeRef, setIframeRef] = useState<HTMLIFrameElement | null>(
+        null
+      );
 
-  let rootElement = document.querySelector('#nfw-root');
-  if (!rootElement) {
-    rootElement = document.createElement('div');
-    rootElement.setAttribute('id', 'nfw-root');
-    document.body.appendChild(rootElement);
-  }
+      return (
+        <IframeDialog
+          {...props}
+          isOpen={isOpen}
+          ref={setIframeRef}
+          onLoad={() => resolve(iframeRef)}
+        />
+      );
+    };
 
-  ReactDOM.createRoot(rootElement).render(
-    <IframeDialogWrapper iframeSrc={iframeSrc} />
-  );
+    let rootElement = document.querySelector('#nfw-root');
+    if (!rootElement) {
+      rootElement = document.createElement('div');
+      rootElement.setAttribute('id', 'nfw-root');
+      document.body.appendChild(rootElement);
+    }
+
+    ReactDOM.createRoot(rootElement).render(
+      <IframeDialogWrapper iframeSrc={iframeSrc} />
+    );
+  });
 };

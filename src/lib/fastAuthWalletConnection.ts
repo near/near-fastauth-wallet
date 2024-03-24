@@ -297,8 +297,7 @@ export class FastAuthWalletConnection {
                     )
                   )
               : [],
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
-            closeDialog: () => {},
+            closeDialog: () => undefined,
             error: e.data.error,
           });
         }
@@ -376,5 +375,56 @@ export class FastAuthWalletConnection {
       );
     }
     return this._connectedAccount;
+  }
+
+  async requestSignMultiChain(data: {
+    derivationPath: string;
+    to: string;
+    value: bigint;
+  }) {
+    const newUrl = new URL(this._walletBaseUrl + '/sign-multichain/');
+    const iframe = await loadIframeDialog(newUrl.toString());
+
+    const waitForPageLoad = (): Promise<string> =>
+      new Promise((innerResolve, innerReject) => {
+        const checkPageLoad = (event: MessageEvent): void => {
+          if (event.data.type === 'signMultiChainLoaded') {
+            window.removeEventListener('message', checkPageLoad);
+            innerResolve('Page loaded successfully');
+          }
+        };
+
+        window.addEventListener('message', checkPageLoad);
+
+        setTimeout(() => {
+          window.removeEventListener('message', checkPageLoad);
+          innerReject('Page load timeout');
+        }, 500);
+      });
+
+    try {
+      await waitForPageLoad();
+
+      iframe.contentWindow?.postMessage(
+        {
+          type: 'multiChainRequest',
+          data,
+        },
+        '*'
+      );
+    } catch (error) {
+      console.error(error);
+    }
+
+    return new Promise((resolve) => {
+      const listener = (event: MessageEvent): void => {
+        if (event.data.type === 'multiChainResponse') {
+          window.removeEventListener('message', listener);
+          resolve(event.data);
+        }
+      };
+
+      window.addEventListener('message', listener);
+    });
   }
 }
