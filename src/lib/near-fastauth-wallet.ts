@@ -347,6 +347,7 @@ const FastAuthWallet: WalletBehaviourFactory<
       derivationPath: string;
       to: string;
       value: bigint;
+      from: string;
     }) {
       await _state.wallet.requestSignMultiChain(data);
     },
