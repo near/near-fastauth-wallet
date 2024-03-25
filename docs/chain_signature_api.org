@@ -1,0 +1,268 @@
+#+title: Wallet Chain Key Rules
+
+* Background
+
+** Key Derivation
+
+When signing using chain signatures each account has a unlimited number of keys. Each keys public key is derived from the account name and the key extension which is an arbitrary string. We can therefore describe a users keys as follow:
+
+#+begin_src
+"david.near,"              My key with no extension
+"david.near, "             My key with an extension of " "
+"david.near,cold_wallet"   My key with an extension of "cold_wallet"
+#+end_src
+
+If the keys aren't identical they have no relationship.
+
+** Ambiguous Signatures
+
+We're going to be potentially storing keys for users who hold assets on many chains. Different chains have different ways of serializing and signing transactions. Many chains take steps to ensure that their signatures are not valid signatures on other chains. EVM chains use "ChainID" to disambiguate signatures between different EVM chains. Dfinity uses a unique salt on the hash of the transaction.
+
+Unfortunately, while this is a best practice, we can't guarantee that all chains do this (NEAR doesn't!). As such a user could receive an innocent looking transaction on one chain that can be used to take a destructive action on another chain. An apocryphal example is:
+
+#+begin_src
+Transaction: "7b73656e643a2022313030222c206e6f74652022227d"
+Parsed SOL: claim free NFT
+Parsed BTC: send 100 BTC to Attacker
+#+end_src
+
+The user would approve the SOL transaction but the attacker would also get the BTC transaction.
+
+This can be solved by having a different keys for any chains that we can't prove could have ambiguous transactions. This means that while an attacker may create ambiguous transactions, it will only be for wallets without assets on the target chain.
+
+* Aims
+
+- To communicate how to parse & display a multichain transaction for informed user consent
+- To minimize the number of times a user has to consent
+- To ensure that a signature on one chain can't be used to take a meaningful action on another chain
+- To allow applications to sometimes share keys
+
+
+* Serialization format
+
+We're using the following format for our derivations paths.
+
+#+begin_src typescript
+{
+   chain: number, // SLIP-44 coin type unsigned integer
+   domain: String, // The domain that owns this key
+   meta: any, // Catch all data structure
+}
+#+end_src
+
+This is encoded in canonical JSON [[https://www.rfc-editor.org/rfc/rfc8785][RFC 8785]].
+
+If you are not using a field don't make it null, instead don't include the key.
+
+Meta can include any data you'd like, a common way of selecting alternate keys will be using an object with an ID field:
+
+#+begin_src typescript
+{
+    meta: {id: 10}, // Pick the tenth bitcoin key
+    chain: 0,
+}
+#+end_src
+
+Do not add any extra fields at the top level as that may clash with latter versions of this spec, instead put them in the meta field.
+
+* Example Flows
+
+The following flows omit showing the cost of transaction fees. For those flows [[file:transaction_fees.org][see here]].
+
+** Using a domains bitcoin key
+
+The SLIPP-44 Bitcoin chain ID is 0.
+
+An application at =near.org= wants to sign the Bitcoin transaction =Send 100 BTC= using the path ={"chain":0,"domain":"near.org"}=.
+
+#+begin_src
+Signed ✅
+#+end_src
+
+We sign the transaction without confirmation because the key is owned by near.org.
+
+** Using a personal Bitcoin key
+
+An application at =near.org= wants to sign the Bitcoin transaction =Send 100 BTC= using the key ={"chain":0}= .
+
+#+begin_src
+near.org would like to run the following Bitcoin transaction:
+
+Send 100 BTC
+[Accept] [Reject]
+#+end_src
+
+The user must make an informed decision about whether this is an action they would like to take.
+
+#+begin_src
+Signed ✅
+#+end_src
+
+** Using a personal EVM key to sign a Binance transaction
+
+The SLIPP-44 Ethereum chain ID is 60 and BNB is 714.
+
+An application at =near.org= wants to sign the Binance Smart Chain transaction =Send 100 BNB, ChainID 56= using the key ={"chain":60}= . The wallet knows this is a BSC transaction because of the corresponding ChainID (56) and but we use the Ethereum chain ID because BNB is an Ethereum chain.
+
+#+begin_src
+near.org would like to run the following Binance Smart Chain transaction:
+
+Send 100 BNB
+[Accept] [Reject]
+#+end_src
+
+The user must make an informed decision about whether this is an action they would like to take.
+
+#+begin_src
+Signed ✅
+#+end_src
+
+** Using an untyped domain key
+
+An application at =near.org= wants to sign the Bitcoin transaction =Send 100 BTC= using the key ={"domain":"near.org"}= .
+
+#+begin_src
+Signed ✅
+#+end_src
+
+While this is ill advised, it's still the domains key so the domain can still choose whether to sign something using it.
+
+** Using another domains Bitcoin key
+
+An application at =attacker.com= wants to sign the Bitcoin transaction =Send 100 BTC= using the key ={"chain":0,"domain":"near.org"}= .
+
+#+begin_src
+Attacker.com would like to sign a transaction using your credentials from near.org
+
+Send 100 BTC
+
+This is a suspicious transaction and likely not one you should accept
+[Reject] [Accept (Are you sure!)]
+#+end_src
+
+The user must make an explicit decision to do something that is ill advised.
+
+#+begin_src
+Signed ✅
+#+end_src
+
+The correct way for =attacker.com= to make this request is to somehow redirect the user to =near.org= and get the user to make a decision there.
+
+
+* Considered Alternative Designs
+
+** Serialization
+
+Any key derivation format should have the following properties:
+
+1. Canonical: for a given set of inputs the derivation path must always be the same or you'll get different keys.
+2. Consistent: You can add new optional information without changing how old keys serialize.
+3. Compact: otherwise it will increase the size of our transactions substantially.[fn:1]
+4. Compatible: It must be easy to serialize from many languages
+
+As such a few options have been considered:
+
+*** Borsh
+
+[[https://borsh.io/][Borsh]] is our very own encoding format and it does 1 and 3 well, but it's not possible to add new optional fields without changing the encoding format(2). Borsh isn't implemented in many languages(4), but it is required to construct a transaction to the NEAR network, so any language calling the chain signatures endpoint must already support it.
+
+Borsh isn't Consistent because each non existent optional field is marked by a byte with a value of 0, this means for each new field you add you add another 0 byte. There is a fudge to get around this restriction though since optional fields are untyped.
+
+If you start with the following encoding format, where ! represents the uninhabited type:
+
+#+begin_src
+{
+    a: A,
+    b: Option<!>,
+}
+#+end_src
+
+you can migrate safely to the
+
+#+begin_src
+{
+    a: A,
+    b: Option<B>,
+}
+#+end_src
+
+Without breaking consistency guarantees. Therefore we can follow this versioning strategy:
+
+#+begin_src rust
+struct V1 {
+    chain: Option<Chain>,
+    domain: Option<String>,
+    metadata: Option<[u8]>,
+    v2: Option<!>
+}
+
+struct V2 {
+    moon_phase: Option<u8>,
+    // Change when we reach API version 3
+    v3: Option<!>
+}
+#+end_src
+
+Any compliant Borsh implementation will serialize this correctly, effectively we're implementing Protobuf in Borsh.
+
+One constraint must be observed when canonicalizing borsh to retain consistency between implementations. We forbid having a Some value around an empty type where an empty type is defined as: the empty string, an empty array or an object with only empty values.
+
+Using our example, this uses 27 bytes in the function call costing 0.00006 NEAR, or 4% of our loose $0.01 target price for signatures at todays prices ($7.22).
+
+*** BIP-44
+
+[[https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki][BIP-44]] is a key derivation format for cryptocurrencies which sounds perfect!
+
+Briefly described it's:
+
+#+begin_src
+m / purpose': 44 / coin_type': SLIP-44 type / account':int / change: 0|1 / address_index:int
+#+end_src
+
+Unfortunately we use our key derivation for substantially different way to BIP-44 users.
+
+1. We don't currently derive our key using BIP-33, so BIP-44 key paths won't make key derivation libraries work
+2. We want to include domains in our key derivations, we could encode index in purpose, but we'd be off spec
+3. The coin types make every chain have a different derivation path. We want to allow for sharing keys between EVM chain.
+
+*** Canonicalized Protobuf/Capnproto
+
+These encoding formats have canonical formats, but actually encoding these is often not simple to support in different languages. It's also pretty easy to do this a bit wrong when you try to hand roll canonicalization yourself, which will lead to peoples assets ending up in a weird spot. Protobuf tooling also tends to be fairly heavyweight.
+
+*** Comma separated values
+
+We initially used a version of comma separated values:
+
+ #+begin_src
+| account | chain | domain | subkey |
+"david.near,bitcoin,near.org,somedata"
+#+end_src
+
+#+begin_src
+david.near,,,                  My personal untyped key, probably never used by a client
+david.near,bitcoin,,           My personal bitcoin key
+david.near,bitcoin,near.org,   A bitcoin key used on near.org
+david.near,,near.org,          An untyped key used on near.org
+#+end_src
+
+This fits all the criteria, is compact (17 bytes on our benchmark) but every client language would have to implement it and many edge cases (data containing commas?) weren't covered in the spec. Fundamentally designing a brand new serialization format is a bad idea.
+
+
+** Chain Format
+
+1. We need to have consistent descriptions of chains
+2. We need to share keys when it is safe to do so, mainly across EVM chains
+
+*** SLIP-44
+
+[[https://github.com/satoshilabs/slips/blob/master/slip-0044.md][SLIP-44]] gives each chain a unique 32 bit number. Which solves 1 well, but it doesn't solve 2.
+
+I propose that we use SLIP-44, but define a set of keys that we map to a common parent. For example BNB, Arbitrum and Avalanche won't use their respective IDs but will instead use Ethereum because they're EVM.
+
+*** Alternatives
+
+Ticker symbols aren't good for this, there are duplicates (e.g. CPChain and Capricoin are both CPC). Names aren't good either, they're often inconsistent.
+
+* Footnotes
+
+[fn:1] This could perhaps be avoided by doing a hash of the derivation format.
