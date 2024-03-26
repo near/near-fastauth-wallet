@@ -343,12 +343,7 @@ const FastAuthWallet: WalletBehaviourFactory<
         throw new Error('Unsupported chain type');
       }
     },
-    async signMultiChainTransaction(data: {
-      derivationPath: string;
-      to: string;
-      value: bigint;
-      from: string;
-    }) {
+    async signMultiChainTransaction(data) {
       await _state.wallet.requestSignMultiChain(data);
     },
     setRelayerUrl({ relayerUrl: relayerUrlArg }) {

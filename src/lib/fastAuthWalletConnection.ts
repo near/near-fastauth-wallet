@@ -39,6 +39,28 @@ interface RequestSignTransactionsOptions {
   meta?: string;
 }
 
+interface BaseSendMultichainMessage {
+  chain: number;
+  domain?: string;
+  to: string;
+  value: bigint;
+  meta?: { [k: string]: any };
+  from: string;
+}
+
+type EvmSendMultichainMessage = BaseSendMultichainMessage & {
+  chainId: bigint;
+  maxFeePerGas?: bigint;
+  maxPriorityFeePerGas?: bigint;
+  gasLimit?: number;
+};
+
+type BTCSendMultichainMessage = BaseSendMultichainMessage & {
+  network: 'mainnet' | 'testnet';
+};
+
+type SendMultichainMessage = BTCSendMultichainMessage | EvmSendMultichainMessage;
+
 export class FastAuthWalletConnection {
   /** @hidden */
   _walletBaseUrl: string;
@@ -377,11 +399,7 @@ export class FastAuthWalletConnection {
     return this._connectedAccount;
   }
 
-  async requestSignMultiChain(data: {
-    derivationPath: string;
-    to: string;
-    value: bigint;
-  }) {
+  async requestSignMultiChain(data: SendMultichainMessage) {
     const newUrl = new URL(this._walletBaseUrl + '/sign-multichain/');
     const iframe = await loadIframeDialog(newUrl.toString());
 
