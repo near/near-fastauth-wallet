@@ -11,7 +11,9 @@ export type IframeModalProps = {
 type MessageEventData = {
   dialogHeight?: number;
   closeIframe?: boolean;
+  hideModal?: boolean;
   onClose?: () => void;
+  type: string;
 };
 
 export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
@@ -22,6 +24,7 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
     const [isDialogOpen, setIsDialogOpen] = useState(isOpen);
     const [dialogHeight, setDialogHeight] = useState('0px');
     const [isIframeLoaded, setIsIframeLoaded] = useState(false);
+    const [hideModal, setHideModal] = useState(false);
 
     const handleOnMessage = (event: MessageEvent<MessageEventData>) => {
       if (event.data.dialogHeight) {
@@ -35,6 +38,10 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
 
       if (event.data.closeIframe) {
         handleDialogClose();
+      }
+
+      if (event.data.hideModal) {
+        setHideModal(true);
       }
     };
 
@@ -94,12 +101,15 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
               borderTopLeftRadius: '12px',
               height: dialogHeight,
               maxHeight: '80vh',
+              ...(hideModal ? { display: 'none' } : {}),
             },
             body: {
               width: '100%',
               padding: 0,
               overflow: 'hidden',
+              ...(hideModal ? { display: 'none' } : {}),
             },
+            ...(hideModal ? { mask: { display: 'none' },  } : {}),
           }}
         >
           {iframeElement}
@@ -121,12 +131,15 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
         styles={{
           content: {
             padding: 0,
+            ...(hideModal ? { display: 'none' } : {}),
           },
           body: {
             height: dialogHeight,
             width: '375px',
             borderRadius: '12px',
+            ...(hideModal ? { display: 'none' } : {}),
           },
+          ...(hideModal ? { mask: { display: 'none' } } : {}), // Hide modal (mask
         }}
       >
         {iframeElement}
