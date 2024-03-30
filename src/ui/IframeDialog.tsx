@@ -24,7 +24,7 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
     const [isDialogOpen, setIsDialogOpen] = useState(isOpen);
     const [dialogHeight, setDialogHeight] = useState('0px');
     const [isIframeLoaded, setIsIframeLoaded] = useState(false);
-    const [hideModal, setHideModal] = useState(false);
+    const [isHidden, setIsHideModal] = useState(false);
 
     const handleOnMessage = (event: MessageEvent<MessageEventData>) => {
       if (event.data.dialogHeight) {
@@ -41,7 +41,7 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
       }
 
       if (event.data.hideModal) {
-        setHideModal(true);
+        setIsHideModal(true);
       }
     };
 
@@ -101,15 +101,15 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
               borderTopLeftRadius: '12px',
               height: dialogHeight,
               maxHeight: '80vh',
-              ...(hideModal ? { display: 'none' } : {}),
+              ...(isHidden ? { display: 'none' } : {}),
             },
             body: {
               width: '100%',
               padding: 0,
               overflow: 'hidden',
-              ...(hideModal ? { display: 'none' } : {}),
+              ...(isHidden ? { display: 'none' } : {}),
             },
-            ...(hideModal ? { mask: { display: 'none' },  } : {}),
+            ...(isHidden ? { mask: { display: 'none' },  } : {}),
           }}
         >
           {iframeElement}
@@ -131,15 +131,15 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
         styles={{
           content: {
             padding: 0,
-            ...(hideModal ? { display: 'none' } : {}),
+            ...(isHidden ? { display: 'none' } : {}),
           },
           body: {
             height: dialogHeight,
             width: '375px',
             borderRadius: '12px',
-            ...(hideModal ? { display: 'none' } : {}),
+            ...(isHidden ? { display: 'none' } : {}),
           },
-          ...(hideModal ? { mask: { display: 'none' } } : {}), // Hide modal (mask
+          ...(isHidden ? { mask: { display: 'none' } } : {}),
         }}
       >
         {iframeElement}
