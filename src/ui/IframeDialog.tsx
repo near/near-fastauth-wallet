@@ -91,6 +91,7 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
           zIndex={10000}
           destroyOnClose
           closeIcon={isIframeLoaded}
+          maskClosable={!isHidden}
           styles={{
             header: {
               display: 'none',
@@ -127,6 +128,7 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
         width="auto"
         zIndex={10000}
         closeIcon={isIframeLoaded}
+        maskClosable={!isHidden}
         destroyOnClose
         styles={{
           content: {
