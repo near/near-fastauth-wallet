@@ -11,7 +11,9 @@ export type IframeModalProps = {
 type MessageEventData = {
   dialogHeight?: number;
   closeIframe?: boolean;
+  hideModal?: boolean;
   onClose?: () => void;
+  type: string;
 };
 
 export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
@@ -22,6 +24,7 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
     const [isDialogOpen, setIsDialogOpen] = useState(isOpen);
     const [dialogHeight, setDialogHeight] = useState('0px');
     const [isIframeLoaded, setIsIframeLoaded] = useState(false);
+    const [isHidden, setIsHideModal] = useState(false);
 
     const handleOnMessage = (event: MessageEvent<MessageEventData>) => {
       if (event.data.dialogHeight) {
@@ -35,6 +38,10 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
 
       if (event.data.closeIframe) {
         handleDialogClose();
+      }
+
+      if (event.data.hideModal) {
+        setIsHideModal(true);
       }
     };
 
@@ -84,6 +91,7 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
           zIndex={10000}
           destroyOnClose
           closeIcon={isIframeLoaded}
+          maskClosable={false}
           styles={{
             header: {
               display: 'none',
@@ -94,12 +102,15 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
               borderTopLeftRadius: '12px',
               height: dialogHeight,
               maxHeight: '80vh',
+              ...(isHidden ? { display: 'none' } : {}),
             },
             body: {
               width: '100%',
               padding: 0,
               overflow: 'hidden',
+              ...(isHidden ? { display: 'none' } : {}),
             },
+            ...(isHidden ? { mask: { display: 'none' },  } : {}),
           }}
         >
           {iframeElement}
@@ -117,16 +128,20 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
         width="auto"
         zIndex={10000}
         closeIcon={isIframeLoaded}
+        maskClosable={false}
         destroyOnClose
         styles={{
           content: {
             padding: 0,
+            ...(isHidden ? { display: 'none' } : {}),
           },
           body: {
             height: dialogHeight,
             width: '375px',
             borderRadius: '12px',
+            ...(isHidden ? { display: 'none' } : {}),
           },
+          ...(isHidden ? { mask: { display: 'none' } } : {}),
         }}
       >
         {iframeElement}
