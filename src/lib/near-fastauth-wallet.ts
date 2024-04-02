@@ -255,20 +255,29 @@ const FastAuthWallet: WalletBehaviourFactory<
           })
         );
       } else {
-        const signedDelegate = await account.signedDelegate({
-          actions: actions.map((action) => createAction(action)),
-          blockHeightTtl: 60,
-          receiverId: receiverId as string,
-        });
+        const balance = await account.getAccountBalance();
 
-        await fetch(relayerUrl, {
-          method: 'POST',
-          mode: 'cors',
-          body: JSON.stringify(
-            Array.from(encodeSignedDelegate(signedDelegate))
-          ),
-          headers: new Headers({ 'Content-Type': 'application/json' }),
-        });
+        if (parseFloat(balance.available) > 0) {
+          await account.signAndSendTransaction({
+            receiverId,
+            actions: actions.map((action) => createAction(action)),
+          });
+        } else {
+          const signedDelegate = await account.signedDelegate({
+            actions: actions.map((action) => createAction(action)),
+            blockHeightTtl: 60,
+            receiverId: receiverId as string,
+          });
+
+          await fetch(relayerUrl, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify(
+              Array.from(encodeSignedDelegate(signedDelegate))
+            ),
+            headers: new Headers({ 'Content-Type': 'application/json' }),
+          });
+        }
       }
     },
 
