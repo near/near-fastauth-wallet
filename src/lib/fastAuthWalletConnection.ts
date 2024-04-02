@@ -8,7 +8,11 @@ import { KeyPair, utils } from 'near-api-js';
 import { ConnectedWalletAccount } from 'near-api-js';
 import { deserialize } from 'near-api-js/lib/utils/serialize';
 import type { Transaction } from '@near-js/transactions';
-import { SCHEMA, SignedDelegate } from '@near-js/transactions';
+import {
+  SCHEMA,
+  SignedDelegate,
+  SignedTransaction,
+} from '@near-js/transactions';
 import { loadIframeDialog } from '../ui/reactApp';
 
 const LOGIN_PATH = '/login/';
@@ -59,7 +63,9 @@ type BTCSendMultichainMessage = BaseSendMultichainMessage & {
   network: 'mainnet' | 'testnet';
 };
 
-type SendMultichainMessage = BTCSendMultichainMessage | EvmSendMultichainMessage;
+type SendMultichainMessage =
+  | BTCSendMultichainMessage
+  | EvmSendMultichainMessage;
 
 export class FastAuthWalletConnection {
   /** @hidden */
@@ -285,6 +291,7 @@ export class FastAuthWalletConnection {
     callbackUrl,
   }: RequestSignTransactionsOptions): Promise<{
     signedDelegates: SignedDelegate[];
+    signedTransactions: SignedTransaction[];
     closeDialog: () => void;
     error?: string;
   }> {
@@ -305,7 +312,10 @@ export class FastAuthWalletConnection {
     loadIframeDialog(newUrl.toString());
     return new Promise((resolve) => {
       const listener = (e: MessageEvent) => {
-        if (Object.prototype.hasOwnProperty.call(e.data, 'signedDelegates')) {
+        if (
+          Object.prototype.hasOwnProperty.call(e.data, 'signedDelegates') ||
+          Object.prototype.hasOwnProperty.call(e.data, 'signedTransactions')
+        ) {
           window.removeEventListener('message', listener);
           resolve({
             signedDelegates: e.data.signedDelegates
@@ -315,6 +325,17 @@ export class FastAuthWalletConnection {
                     deserialize(
                       SCHEMA,
                       SignedDelegate,
+                      Buffer.from(s, 'base64')
+                    )
+                  )
+              : [],
+            signedTransactions: e.data.signedTransactions
+              ? e.data.signedTransactions
+                  .split(',')
+                  .map((s: string) =>
+                    deserialize(
+                      SCHEMA,
+                      SignedTransaction,
                       Buffer.from(s, 'base64')
                     )
                   )

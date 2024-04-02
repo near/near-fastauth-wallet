@@ -1,4 +1,4 @@
-import { encodeSignedDelegate } from '@near-js/transactions';
+import { encodeSignedDelegate, encodeTransaction } from '@near-js/transactions';
 import type {
   Account,
   BrowserWallet,
@@ -241,7 +241,7 @@ const FastAuthWallet: WalletBehaviourFactory<
         const arg = {
           transactions: [transaction],
         };
-        const { closeDialog, signedDelegates } =
+        const { closeDialog, signedDelegates, signedTransactions } =
           await _state.wallet.requestSignTransactions(arg);
         closeDialog();
         signedDelegates.forEach((signedDelegate) =>
@@ -253,6 +253,11 @@ const FastAuthWallet: WalletBehaviourFactory<
             ),
             headers: new Headers({ 'Content-Type': 'application/json' }),
           })
+        );
+        signedTransactions.forEach((signedTransaction) =>
+          _state.wallet._near.connection.provider.sendTransaction(
+            signedTransaction
+          )
         );
       } else {
         const balance = await account.getAccountBalance();
