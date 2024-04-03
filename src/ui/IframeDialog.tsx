@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef, forwardRef } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
-import { Modal, Drawer } from 'antd';
+import { Modal, Drawer, Spin, Flex } from 'antd';
+import { CloseOutlined, LoadingOutlined } from '@ant-design/icons';
+
+const boxStyle: React.CSSProperties = {
+  width: '100%',
+  height: '100%',
+};
 
 export type IframeModalProps = {
   iframeSrc: string;
@@ -63,21 +69,32 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
     };
 
     const iframeElement = (
-      <iframe
-        ref={ref}
-        id="nfw-connect-iframe"
-        title="Iframe Content"
-        src={iframeSrc}
-        width="100%"
-        height="100%" // Set your desired height
-        allowFullScreen
-        allow="publickey-credentials-get *; clipboard-write"
-        style={{ borderRadius: '12px' }}
-        onLoad={(e) => {
-          setIsIframeLoaded(true);
-          onLoad(e);
-        }}
-      />
+      <>
+        {!isIframeLoaded && (
+          <Flex style={boxStyle} justify="center" align="center">
+            <Spin
+              indicator={
+                <LoadingOutlined style={{ fontSize: 55, color: '#fff' }} spin />
+              }
+            />
+          </Flex>
+        )}
+        <iframe
+          ref={ref}
+          id="nfw-connect-iframe"
+          title="Iframe Content"
+          src={iframeSrc}
+          width="100%"
+          height="100%" // Set your desired height
+          allowFullScreen
+          allow="publickey-credentials-get *; clipboard-write"
+          style={{ borderRadius: '12px' }}
+          onLoad={(e) => {
+            setIsIframeLoaded(true);
+            onLoad(e);
+          }}
+        />
+      </>
     );
 
     if (isMobile) {
@@ -108,11 +125,27 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
               width: '100%',
               padding: 0,
               overflow: 'hidden',
+              position: 'relative',
               ...(isHidden ? { display: 'none' } : {}),
             },
-            ...(isHidden ? { mask: { display: 'none' },  } : {}),
+            ...(isHidden ? { mask: { display: 'none' } } : {}),
           }}
         >
+          {isIframeLoaded && (
+            <CloseOutlined // Add close button
+              style={{
+                cursor: 'pointer',
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                width: '16px',
+                height: '16px',
+                color: '#706F6C',
+              }}
+              onClick={handleDialogClose}
+            />
+          )}
+
           {iframeElement}
         </Drawer>
       );
