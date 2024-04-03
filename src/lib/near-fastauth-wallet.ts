@@ -1,4 +1,9 @@
-import { encodeSignedDelegate, encodeTransaction } from '@near-js/transactions';
+import {
+  encodeSignedDelegate,
+  encodeTransaction,
+  SignedDelegate,
+  SignedTransaction,
+} from '@near-js/transactions';
 import type {
   Account,
   BrowserWallet,
@@ -218,6 +223,9 @@ const FastAuthWallet: WalletBehaviourFactory<
         accessKey.permission !== 'FullAccess' &&
         accessKey.permission.FunctionCall.receiver_id !== receiverId;
 
+      const isRelayed =
+        parseFloat((await account.getAccountBalance()).available) === 0;
+
       if (needsFAK) {
         const { signer, networkId, provider } = account.connection;
         const block = await provider.block({ finality: 'final' });
@@ -238,36 +246,35 @@ const FastAuthWallet: WalletBehaviourFactory<
           actions.map(createAction),
           nearAPI.utils.serialize.base_decode(block.header.hash)
         );
+
         const arg = {
           transactions: [transaction],
+          isRelayed,
         };
-        const { closeDialog, signedDelegates, signedTransactions } =
+        const { closeDialog, signedTransactions, signedDelegates } =
           await _state.wallet.requestSignTransactions(arg);
         closeDialog();
-        signedDelegates.forEach((signedDelegate) =>
-          fetch(relayerUrl, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(
-              Array.from(encodeSignedDelegate(signedDelegate))
-            ),
-            headers: new Headers({ 'Content-Type': 'application/json' }),
-          })
-        );
-        signedTransactions.forEach((signedTransaction) =>
-          _state.wallet._near.connection.provider.sendTransaction(
-            signedTransaction
-          )
-        );
-      } else {
-        const balance = await account.getAccountBalance();
 
-        if (parseFloat(balance.available) > 0) {
-          await account.signAndSendTransaction({
-            receiverId,
-            actions: actions.map((action) => createAction(action)),
-          });
+        if (isRelayed) {
+          signedDelegates.forEach((signedDelegate) =>
+            fetch(relayerUrl, {
+              method: 'POST',
+              mode: 'cors',
+              body: JSON.stringify(
+                Array.from(encodeSignedDelegate(signedDelegate))
+              ),
+              headers: new Headers({ 'Content-Type': 'application/json' }),
+            })
+          );
         } else {
+          signedTransactions.forEach((signedTransaction) =>
+            _state.wallet._near.connection.provider.sendTransaction(
+              signedTransaction
+            )
+          );
+        }
+      } else {
+        if (isRelayed) {
           const signedDelegate = await account.signedDelegate({
             actions: actions.map((action) => createAction(action)),
             blockHeightTtl: 60,
@@ -281,6 +288,11 @@ const FastAuthWallet: WalletBehaviourFactory<
               Array.from(encodeSignedDelegate(signedDelegate))
             ),
             headers: new Headers({ 'Content-Type': 'application/json' }),
+          });
+        } else {
+          await account.signAndSendTransaction({
+            receiverId,
+            actions: actions.map((action) => createAction(action)),
           });
         }
       }
@@ -297,40 +309,58 @@ const FastAuthWallet: WalletBehaviourFactory<
         );
       });
 
+      const isRelayed =
+        parseFloat((await account.getAccountBalance()).available) === 0;
+
       if (needsFAK) {
         const arg = {
           transactions: await transformTransactions(transactions),
           callbackUrl,
         };
-        const { closeDialog, signedDelegates } =
+        const { closeDialog, signedTransactions, signedDelegates } =
           await _state.wallet.requestSignTransactions(arg);
         closeDialog();
-        signedDelegates.forEach((signedDelegate) =>
-          fetch(relayerUrl, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(
-              Array.from(encodeSignedDelegate(signedDelegate))
-            ),
-            headers: new Headers({ 'Content-Type': 'application/json' }),
-          })
-        );
+        if (isRelayed) {
+          signedDelegates.forEach((signedDelegate) =>
+            fetch(relayerUrl, {
+              method: 'POST',
+              mode: 'cors',
+              body: JSON.stringify(
+                Array.from(encodeSignedDelegate(signedDelegate))
+              ),
+              headers: new Headers({ 'Content-Type': 'application/json' }),
+            })
+          );
+        } else {
+          signedTransactions.forEach((signedTransaction) =>
+            _state.wallet._near.connection.provider.sendTransaction(
+              signedTransaction
+            )
+          );
+        }
       } else {
         for (const { receiverId, signerId, actions } of transactions) {
-          const signedDelegate = await account.signedDelegate({
-            actions: actions.map((action) => createAction(action)),
-            blockHeightTtl: 60,
-            receiverId: receiverId as string,
-          });
+          if (isRelayed) {
+            const signedDelegate = await account.signedDelegate({
+              actions: actions.map((action) => createAction(action)),
+              blockHeightTtl: 60,
+              receiverId: receiverId as string,
+            });
 
-          await fetch(relayerUrl, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(
-              Array.from(encodeSignedDelegate(signedDelegate))
-            ),
-            headers: new Headers({ 'Content-Type': 'application/json' }),
-          });
+            await fetch(relayerUrl, {
+              method: 'POST',
+              mode: 'cors',
+              body: JSON.stringify(
+                Array.from(encodeSignedDelegate(signedDelegate))
+              ),
+              headers: new Headers({ 'Content-Type': 'application/json' }),
+            });
+          } else {
+            account.signAndSendTransaction({
+              receiverId,
+              actions: actions.map((action) => createAction(action)),
+            });
+          }
         }
       }
     },

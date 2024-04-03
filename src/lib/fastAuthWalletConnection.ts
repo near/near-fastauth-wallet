@@ -14,6 +14,7 @@ import {
   SignedTransaction,
 } from '@near-js/transactions';
 import { loadIframeDialog } from '../ui/reactApp';
+import { N } from 'ethers';
 
 const LOGIN_PATH = '/login/';
 const CREATE_ACCOUNT_PATH = '/create-account/';
@@ -41,6 +42,8 @@ interface RequestSignTransactionsOptions {
   callbackUrl?: string;
   /** meta information NEAR Wallet will send back to the application. `meta` will be attached to the `callbackUrl` as a url search param */
   meta?: string;
+  /** Indicates if the transaction should be relayed through a third party */
+  isRelayed?: boolean;
 }
 
 interface BaseSendMultichainMessage {
@@ -289,9 +292,10 @@ export class FastAuthWalletConnection {
     transactions,
     meta,
     callbackUrl,
+    isRelayed,
   }: RequestSignTransactionsOptions): Promise<{
-    signedDelegates: SignedDelegate[];
     signedTransactions: SignedTransaction[];
+    signedDelegates: SignedDelegate[];
     closeDialog: () => void;
     error?: string;
   }> {
@@ -307,6 +311,12 @@ export class FastAuthWalletConnection {
     );
     newUrl.searchParams.set('success_url', callbackUrl || currentUrl.href);
     newUrl.searchParams.set('failure_url', callbackUrl || currentUrl.href);
+
+    newUrl.searchParams.set(
+      'sign_method',
+      isRelayed ? 'SIGN_DELEGATE' : 'SIGN_TRANSACTION'
+    );
+
     if (meta) newUrl.searchParams.set('meta', meta);
     // Loads transaction modal
     loadIframeDialog(newUrl.toString());
