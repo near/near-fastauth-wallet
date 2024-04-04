@@ -1,9 +1,4 @@
-import {
-  encodeSignedDelegate,
-  encodeTransaction,
-  SignedDelegate,
-  SignedTransaction,
-} from '@near-js/transactions';
+import { encodeSignedDelegate, encodeTransaction } from '@near-js/transactions';
 import type {
   Account,
   BrowserWallet,
@@ -28,6 +23,8 @@ import {
   ChainSignatureContracts,
   BTCNetworkIds,
 } from '../utils/multi-chain/types';
+import BN from 'bn.js';
+import { NEAR_MAX_GAS } from '../utils/constants';
 
 export interface FastAuthWalletParams {
   walletUrl?: string;
@@ -213,6 +210,8 @@ const FastAuthWallet: WalletBehaviourFactory<
 
     async signAndSendTransaction({ receiverId, actions, signerId }) {
       const account = _state.wallet.account();
+      const accountNear = await _state.near.account();
+      const connectedNearAccountWallet = _state.wallet._connectedAccount;
 
       const { accessKey } = await account.findAccessKey(
         receiverId as string,
@@ -223,8 +222,14 @@ const FastAuthWallet: WalletBehaviourFactory<
         accessKey.permission !== 'FullAccess' &&
         accessKey.permission.FunctionCall.receiver_id !== receiverId;
 
-      const isRelayed =
-        parseFloat((await account.getAccountBalance()).available) === 0;
+      const accountBalance = await account.getAccountBalance();
+      const availableBN = new BN(accountBalance.available);
+
+      // TODO: Should also check if the access keys has sufficient permissions to call the method or transfer near
+      // FunctionCall on the other hand, only grants permission to call any or a specific set of methods on one given contract. It has an allowance of $NEAR that can be spent on GAS and transaction fees only. Function call access keys cannot be used to transfer $NEAR.
+      const isRelayed = new BN(
+        (await account.getAccountBalance()).available
+      ).lt(NEAR_MAX_GAS);
 
       if (needsFAK) {
         const { signer, networkId, provider } = account.connection;
@@ -268,9 +273,7 @@ const FastAuthWallet: WalletBehaviourFactory<
           );
         } else {
           signedTransactions.forEach((signedTransaction) =>
-            _state.wallet._near.connection.provider.sendTransaction(
-              signedTransaction
-            )
+            _state.near.connection.provider.sendTransaction(signedTransaction)
           );
         }
       } else {
@@ -290,10 +293,28 @@ const FastAuthWallet: WalletBehaviourFactory<
             headers: new Headers({ 'Content-Type': 'application/json' }),
           });
         } else {
-          await account.signAndSendTransaction({
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          const transaction = await account.signTransaction(
             receiverId,
-            actions: actions.map((action) => createAction(action)),
-          });
+            actions.map((action) => createAction(action))
+          );
+          await _state.near.connection.provider.sendTransaction(transaction[1]);
+          // const signedTxBase64 = encodeTransaction(transaction[1]);
+          // await fetch('https://rpc.testnet.near.org/', {
+          //   method: 'POST',
+          //   headers: { 'Content-Type': 'application/json' },
+          //   body: JSON.stringify({
+          //     jsonrpc: '2.0',
+          //     id: 'dontcare',
+          //     method: 'send_tx',
+          //     params: {
+          //       signed_tx_base64:
+          //         Buffer.from(signedTxBase64).toString('base64'),
+          //       wait_until: 'EXECUTED',
+          //     },
+          //   }),
+          // });
         }
       }
     },
@@ -309,8 +330,9 @@ const FastAuthWallet: WalletBehaviourFactory<
         );
       });
 
-      const isRelayed =
-        parseFloat((await account.getAccountBalance()).available) === 0;
+      const isRelayed = new BN(
+        (await account.getAccountBalance()).available
+      ).lt(NEAR_MAX_GAS);
 
       if (needsFAK) {
         const arg = {
@@ -356,7 +378,7 @@ const FastAuthWallet: WalletBehaviourFactory<
               headers: new Headers({ 'Content-Type': 'application/json' }),
             });
           } else {
-            account.signAndSendTransaction({
+            await account.signAndSendTransaction({
               receiverId,
               actions: actions.map((action) => createAction(action)),
             });
