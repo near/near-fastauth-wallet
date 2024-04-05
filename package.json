@@ -20,7 +20,7 @@
     "class-variance-authority": "^0.7.0",
     "elliptic": "^6.5.5",
     "ethers": "^6.11.1",
-    "multichain-tools": "^1.0.2",
+    "multichain-tools": "^1.0.5",
     "near-api-js": "^2.1.4",
     "tslib": "^2.3.0",
     "usehooks-ts": "^2.9.2"

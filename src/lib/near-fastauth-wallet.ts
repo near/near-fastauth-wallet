@@ -3,7 +3,6 @@ import type {
   Account,
   BrowserWallet,
   Network,
-  NetworkId,
   Optional,
   Transaction,
   WalletBehaviourFactory,
@@ -16,7 +15,7 @@ import {
   ChainSignatureContracts,
   BTCNetworkIds,
   fetchDerivedEVMAddress,
-  fetchDerivedBTCAddressAndPublicKey,
+  fetchDerivedBTCAddress,
 } from 'multichain-tools';
 
 import icon from './fast-auth-icon';
@@ -54,7 +53,7 @@ interface DerivedAddressParamBTC {
   type: 'BTC';
   signerId: string;
   path: string;
-  networkId: NetworkId;
+  networkId: NearNetworkIds;
   btcNetworkId: BTCNetworkIds;
   contract: ChainSignatureContracts;
 }
@@ -329,7 +328,7 @@ const FastAuthWallet: WalletBehaviourFactory<
           args.contract
         );
       } else if (args.type === 'BTC') {
-        const { address } = await fetchDerivedBTCAddressAndPublicKey(
+        const address = await fetchDerivedBTCAddress(
           args.signerId,
           args.path,
           args.networkId,
