@@ -11,18 +11,16 @@ import type {
 } from '@near-wallet-selector/core';
 import { createAction } from '@near-wallet-selector/wallet-utils';
 import * as nearAPI from 'near-api-js';
-
-import icon from './fast-auth-icon';
-import { FastAuthWalletConnection } from './fastAuthWalletConnection';
-import {
-  fetchDerivedEVMAddress,
-  fetchDerivedBTCAddressAndPublicKey,
-} from '../utils/multi-chain/utils';
 import {
   NearNetworkIds,
   ChainSignatureContracts,
   BTCNetworkIds,
-} from '../utils/multi-chain/types';
+  fetchDerivedEVMAddress,
+  fetchDerivedBTCAddressAndPublicKey,
+} from 'multichain-tools';
+
+import icon from './fast-auth-icon';
+import { FastAuthWalletConnection } from './fastAuthWalletConnection';
 
 export interface FastAuthWalletParams {
   walletUrl?: string;
