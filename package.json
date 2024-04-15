@@ -1,6 +1,6 @@
 {
   "name": "near-fastauth-wallet",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "license": "MIT",
   "scripts": {
     "build": "nx build --buildLibsFromSource --skip-nx-cache",
@@ -20,7 +20,7 @@
     "class-variance-authority": "^0.7.0",
     "elliptic": "^6.5.5",
     "ethers": "^6.11.1",
-    "multichain-tools": "^1.0.7",
+    "multichain-tools": "^1.0.8",
     "near-api-js": "^2.1.4",
     "tslib": "^2.3.0",
     "usehooks-ts": "^2.9.2"
