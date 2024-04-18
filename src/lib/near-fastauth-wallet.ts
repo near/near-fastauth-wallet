@@ -3,7 +3,6 @@ import type {
   Account,
   BrowserWallet,
   Network,
-  NetworkId,
   Optional,
   Transaction,
   WalletBehaviourFactory,
@@ -11,18 +10,16 @@ import type {
 } from '@near-wallet-selector/core';
 import { createAction } from '@near-wallet-selector/wallet-utils';
 import * as nearAPI from 'near-api-js';
-
-import icon from './fast-auth-icon';
-import { FastAuthWalletConnection } from './fastAuthWalletConnection';
-import {
-  fetchDerivedEVMAddress,
-  fetchDerivedBTCAddressAndPublicKey,
-} from '../utils/multi-chain/utils';
 import {
   NearNetworkIds,
   ChainSignatureContracts,
   BTCNetworkIds,
-} from '../utils/multi-chain/types';
+  fetchDerivedEVMAddress,
+  fetchDerivedBTCAddress,
+} from 'multichain-tools';
+
+import icon from './fast-auth-icon';
+import { FastAuthWalletConnection } from './fastAuthWalletConnection';
 
 export interface FastAuthWalletParams {
   walletUrl?: string;
@@ -56,7 +53,7 @@ interface DerivedAddressParamBTC {
   type: 'BTC';
   signerId: string;
   path: string;
-  networkId: NetworkId;
+  networkId: NearNetworkIds;
   btcNetworkId: BTCNetworkIds;
   contract: ChainSignatureContracts;
 }
@@ -331,7 +328,7 @@ const FastAuthWallet: WalletBehaviourFactory<
           args.contract
         );
       } else if (args.type === 'BTC') {
-        const { address } = await fetchDerivedBTCAddressAndPublicKey(
+        const address = await fetchDerivedBTCAddress(
           args.signerId,
           args.path,
           args.networkId,
