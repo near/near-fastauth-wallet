@@ -1,9 +1,8 @@
-import { encodeSignedDelegate, encodeTransaction } from '@near-js/transactions';
+import { encodeSignedDelegate } from '@near-js/transactions';
 import type {
   Account,
   BrowserWallet,
   Network,
-  NetworkId,
   Optional,
   Transaction,
   WalletBehaviourFactory,
@@ -12,19 +11,18 @@ import type {
 import { createAction } from '@near-wallet-selector/wallet-utils';
 import * as nearAPI from 'near-api-js';
 
-import icon from './fast-auth-icon';
-import { FastAuthWalletConnection } from './fastAuthWalletConnection';
-import {
-  fetchDerivedEVMAddress,
-  fetchDerivedBTCAddressAndPublicKey,
-} from '../utils/multi-chain/utils';
+import BN from 'bn.js';
+import { NEAR_MAX_GAS } from '../utils/constants';
 import {
   NearNetworkIds,
   ChainSignatureContracts,
   BTCNetworkIds,
-} from '../utils/multi-chain/types';
-import BN from 'bn.js';
-import { NEAR_MAX_GAS } from '../utils/constants';
+  fetchDerivedBTCAddress,
+  fetchDerivedEVMAddress,
+} from 'multichain-tools';
+
+import icon from './fast-auth-icon';
+import { FastAuthWalletConnection } from './fastAuthWalletConnection';
 
 export interface FastAuthWalletParams {
   walletUrl?: string;
@@ -58,7 +56,7 @@ interface DerivedAddressParamBTC {
   type: 'BTC';
   signerId: string;
   path: string;
-  networkId: NetworkId;
+  networkId: NearNetworkIds;
   btcNetworkId: BTCNetworkIds;
   contract: ChainSignatureContracts;
 }
@@ -384,7 +382,7 @@ const FastAuthWallet: WalletBehaviourFactory<
           args.contract
         );
       } else if (args.type === 'BTC') {
-        const { address } = await fetchDerivedBTCAddressAndPublicKey(
+        const address = await fetchDerivedBTCAddress(
           args.signerId,
           args.path,
           args.networkId,
