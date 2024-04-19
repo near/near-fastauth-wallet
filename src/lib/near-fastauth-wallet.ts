@@ -155,7 +155,7 @@ const FastAuthWallet: WalletBehaviourFactory<
           account.accountId,
           nearAPI.utils.PublicKey.from(accessKey.public_key),
           transaction.receiverId,
-          accessKey.access_key.nonce + index + 1,
+          new BN(accessKey.access_key.nonce).add(new BN(1)),
           actions,
           nearAPI.utils.serialize.base_decode(block.header.hash)
         );
@@ -240,7 +240,7 @@ const FastAuthWallet: WalletBehaviourFactory<
           account.accountId,
           nearAPI.utils.PublicKey.from(txAccessKey.public_key),
           receiverId as string,
-          txAccessKey.access_key.nonce + 1,
+          new BN(txAccessKey.access_key.nonce).add(new BN(1)),
           actions.map(createAction),
           nearAPI.utils.serialize.base_decode(block.header.hash)
         );
