@@ -208,7 +208,7 @@ const FastAuthWallet: WalletBehaviourFactory<
 
     async signAndSendTransaction({ receiverId, actions, signerId }) {
       const account = _state.wallet.account();
-      const accountNear = await _state.near.account();
+      const connectedNearAccountWallet = _state.wallet._connectedAccount;
 
       const { accessKey } = await account.findAccessKey(
         receiverId as string,
@@ -220,17 +220,9 @@ const FastAuthWallet: WalletBehaviourFactory<
         accessKey.permission.FunctionCall.receiver_id !== receiverId;
 
       // Relay if the account doesn't have enough balance to cover gas fees or if the transaction includes a deposit action
-      const isRelayed =
-        new BN((await account.getAccountBalance()).available).lt(
-          NEAR_MAX_GAS
-        ) ||
-        (!!actions.find(
-          (action) =>
-            'params' in action &&
-            'deposit' in action.params &&
-            new BN(action.params.deposit).gt(new BN(0))
-        ) &&
-          !needsFAK);
+      const isRelayed = new BN(
+        (await account.getAccountBalance()).available
+      ).lt(NEAR_MAX_GAS);
 
       if (needsFAK) {
         const { signer, networkId, provider } = account.connection;
@@ -294,8 +286,10 @@ const FastAuthWallet: WalletBehaviourFactory<
             headers: new Headers({ 'Content-Type': 'application/json' }),
           });
         } else {
-          // Disabling to access a protected method and avoid code duplication. Open PR to allow access to signTransaction on near-api-js (https://github.com/near/near-api-js/blob/f28796267327fc6905a8c6a7051ff37aaa7bbd06/packages/accounts/src/account.ts#L145)
-          const transaction = await accountNear.signTransaction(
+          // Disabling typescript to access a protected method and avoid code duplication. Open PR to allow access to signTransaction on near-api-js (https://github.com/near/near-api-js/blob/f28796267327fc6905a8c6a7051ff37aaa7bbd06/packages/accounts/src/account.ts#L145)
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          const transaction = await connectedNearAccountWallet.signTransaction(
             receiverId,
             actions.map((action) => createAction(action))
           );
