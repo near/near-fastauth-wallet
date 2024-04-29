@@ -12,7 +12,6 @@ import { createAction } from '@near-wallet-selector/wallet-utils';
 import * as nearAPI from 'near-api-js';
 
 import BN from 'bn.js';
-import { NEAR_MAX_GAS } from '../utils/constants';
 import {
   NearNetworkIds,
   ChainSignatureContracts,
@@ -206,7 +205,7 @@ const FastAuthWallet: WalletBehaviourFactory<
       throw new Error(`Method not supported by ${metadata.name}`);
     },
 
-    async signAndSendTransaction({ receiverId, actions, signerId }) {
+    async signAndSendTransaction({ receiverId, actions }) {
       const account = _state.wallet.account();
       const connectedNearAccountWallet = _state.wallet._connectedAccount;
 
@@ -218,11 +217,6 @@ const FastAuthWallet: WalletBehaviourFactory<
       const needsFAK =
         accessKey.permission !== 'FullAccess' &&
         accessKey.permission.FunctionCall.receiver_id !== receiverId;
-
-      // Relay if the account doesn't have enough balance to cover gas fees or if the transaction includes a deposit action
-      const isRelayed = new BN(
-        (await account.getAccountBalance()).available
-      ).lt(NEAR_MAX_GAS);
 
       if (needsFAK) {
         const { signer, networkId, provider } = account.connection;
@@ -247,45 +241,47 @@ const FastAuthWallet: WalletBehaviourFactory<
 
         const arg = {
           transactions: [transaction],
-          isRelayed,
         };
         const { closeDialog, signedTransactions, signedDelegates } =
           await _state.wallet.requestSignTransactions(arg);
         closeDialog();
 
-        if (isRelayed) {
-          signedDelegates.forEach((signedDelegate) =>
-            fetch(relayerUrl, {
+        Promise.allSettled(
+          signedDelegates.map(async (signedDelegate, txIndex) => {
+            const res = await fetch(relayerUrl, {
               method: 'POST',
               mode: 'cors',
               body: JSON.stringify(
                 Array.from(encodeSignedDelegate(signedDelegate))
               ),
               headers: new Headers({ 'Content-Type': 'application/json' }),
-            })
-          );
-        } else {
-          signedTransactions.forEach((signedTransaction) =>
-            _state.near.connection.provider.sendTransaction(signedTransaction)
-          );
-        }
-      } else {
-        if (isRelayed) {
-          const signedDelegate = await account.signedDelegate({
-            actions: actions.map((action) => createAction(action)),
-            blockHeightTtl: 60,
-            receiverId: receiverId as string,
-          });
+            });
 
-          await fetch(relayerUrl, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(
-              Array.from(encodeSignedDelegate(signedDelegate))
-            ),
-            headers: new Headers({ 'Content-Type': 'application/json' }),
-          });
-        } else {
+            if (!res.ok) {
+              const signedTransaction = signedTransactions[txIndex];
+              _state.near.connection.provider.sendTransaction(
+                signedTransaction
+              );
+            }
+          })
+        );
+      } else {
+        const signedDelegate = await account.signedDelegate({
+          actions: actions.map((action) => createAction(action)),
+          blockHeightTtl: 60,
+          receiverId: receiverId as string,
+        });
+
+        const res = await fetch(relayerUrl, {
+          method: 'POST',
+          mode: 'cors',
+          body: JSON.stringify(
+            Array.from(encodeSignedDelegate(signedDelegate))
+          ),
+          headers: new Headers({ 'Content-Type': 'application/json' }),
+        });
+
+        if (!res.ok) {
           // Disabling typescript to access a protected method and avoid code duplication. Open PR to allow access to signTransaction on near-api-js (https://github.com/near/near-api-js/blob/f28796267327fc6905a8c6a7051ff37aaa7bbd06/packages/accounts/src/account.ts#L145)
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
@@ -310,10 +306,6 @@ const FastAuthWallet: WalletBehaviourFactory<
         );
       });
 
-      const isRelayed = new BN(
-        (await account.getAccountBalance()).available
-      ).lt(NEAR_MAX_GAS);
-
       if (needsFAK) {
         const arg = {
           transactions: await transformTransactions(transactions),
@@ -323,42 +315,43 @@ const FastAuthWallet: WalletBehaviourFactory<
           await _state.wallet.requestSignTransactions(arg);
 
         closeDialog();
-        if (isRelayed) {
-          signedDelegates.forEach((signedDelegate) =>
-            fetch(relayerUrl, {
+        Promise.allSettled(
+          signedDelegates.map(async (signedDelegate, txIndex) => {
+            const res = await fetch(relayerUrl, {
               method: 'POST',
               mode: 'cors',
               body: JSON.stringify(
                 Array.from(encodeSignedDelegate(signedDelegate))
               ),
               headers: new Headers({ 'Content-Type': 'application/json' }),
-            })
-          );
-        } else {
-          signedTransactions.forEach((signedTransaction) =>
-            _state.wallet._near.connection.provider.sendTransaction(
-              signedTransaction
-            )
-          );
-        }
-      } else {
-        for (const { receiverId, signerId, actions } of transactions) {
-          if (isRelayed) {
-            const signedDelegate = await account.signedDelegate({
-              actions: actions.map((action) => createAction(action)),
-              blockHeightTtl: 60,
-              receiverId: receiverId as string,
             });
 
-            await fetch(relayerUrl, {
-              method: 'POST',
-              mode: 'cors',
-              body: JSON.stringify(
-                Array.from(encodeSignedDelegate(signedDelegate))
-              ),
-              headers: new Headers({ 'Content-Type': 'application/json' }),
-            });
-          } else {
+            if (!res.ok) {
+              const signedTransaction = signedTransactions[txIndex];
+              _state.wallet._near.connection.provider.sendTransaction(
+                signedTransaction
+              );
+            }
+          })
+        );
+      } else {
+        for (const { receiverId, actions } of transactions) {
+          const signedDelegate = await account.signedDelegate({
+            actions: actions.map((action) => createAction(action)),
+            blockHeightTtl: 60,
+            receiverId: receiverId as string,
+          });
+
+          const res = await fetch(relayerUrl, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify(
+              Array.from(encodeSignedDelegate(signedDelegate))
+            ),
+            headers: new Headers({ 'Content-Type': 'application/json' }),
+          });
+
+          if (!res.ok) {
             const transaction =
               // Disabling typescript to access a protected method and avoid code duplication. Open PR to allow access to signTransaction on near-api-js (https://github.com/near/near-api-js/blob/f28796267327fc6905a8c6a7051ff37aaa7bbd06/packages/accounts/src/account.ts#L145)
               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
