@@ -257,7 +257,7 @@ const FastAuthWallet: WalletBehaviourFactory<
               headers: new Headers({ 'Content-Type': 'application/json' }),
             });
 
-            if (!res.ok) {
+            if (res.status === 400) {
               const signedTransaction = signedTransactions[txIndex];
               _state.near.connection.provider.sendTransaction(
                 signedTransaction
@@ -281,7 +281,7 @@ const FastAuthWallet: WalletBehaviourFactory<
           headers: new Headers({ 'Content-Type': 'application/json' }),
         });
 
-        if (!res.ok) {
+        if (res.status === 400) {
           // Disabling typescript to access a protected method and avoid code duplication. Open PR to allow access to signTransaction on near-api-js (https://github.com/near/near-api-js/blob/f28796267327fc6905a8c6a7051ff37aaa7bbd06/packages/accounts/src/account.ts#L145)
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
