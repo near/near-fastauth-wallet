@@ -30,11 +30,13 @@ export interface FastAuthWalletParams {
   successUrl?: string;
   failureUrl?: string;
   relayerUrl?: string;
+  allowToUseUserBalance?: boolean;
 }
 
 interface FastAuthWalletExtraOptions {
   walletUrl: string;
   relayerUrl: string;
+  allowToUseUserBalance: boolean;
 }
 
 interface FastAuthWalletState {
@@ -103,6 +105,7 @@ const FastAuthWallet: WalletBehaviourFactory<
 > = async ({ metadata, options, store, params, logger }) => {
   const _state = await setupWalletState(params, options.network);
   let relayerUrl = params.relayerUrl;
+  const allowToUseUserBalance = params.allowToUseUserBalance;
   const getAccounts = async (): Promise<Array<Account>> => {
     const accountId = _state.wallet.getAccountId();
     const account = _state.wallet.account();
@@ -257,7 +260,7 @@ const FastAuthWallet: WalletBehaviourFactory<
               headers: new Headers({ 'Content-Type': 'application/json' }),
             });
 
-            if (res.status === 400) {
+            if (res.status === 400 && allowToUseUserBalance) {
               const signedTransaction = signedTransactions[txIndex];
               _state.near.connection.provider.sendTransaction(
                 signedTransaction
@@ -281,7 +284,7 @@ const FastAuthWallet: WalletBehaviourFactory<
           headers: new Headers({ 'Content-Type': 'application/json' }),
         });
 
-        if (res.status === 400) {
+        if (res.status === 400 && allowToUseUserBalance) {
           // Disabling typescript to access a protected method and avoid code duplication. Open PR to allow access to signTransaction on near-api-js (https://github.com/near/near-api-js/blob/f28796267327fc6905a8c6a7051ff37aaa7bbd06/packages/accounts/src/account.ts#L145)
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
@@ -326,7 +329,7 @@ const FastAuthWallet: WalletBehaviourFactory<
               headers: new Headers({ 'Content-Type': 'application/json' }),
             });
 
-            if (res.status === 400) {
+            if (res.status === 400 && allowToUseUserBalance) {
               const signedTransaction = signedTransactions[txIndex];
               _state.wallet._near.connection.provider.sendTransaction(
                 signedTransaction
@@ -351,7 +354,7 @@ const FastAuthWallet: WalletBehaviourFactory<
             headers: new Headers({ 'Content-Type': 'application/json' }),
           });
 
-          if (res.status === 400) {
+          if (res.status === 400 && allowToUseUserBalance) {
             const transaction =
               // Disabling typescript to access a protected method and avoid code duplication. Open PR to allow access to signTransaction on near-api-js (https://github.com/near/near-api-js/blob/f28796267327fc6905a8c6a7051ff37aaa7bbd06/packages/accounts/src/account.ts#L145)
               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -412,6 +415,7 @@ export function setupFastAuthWallet({
   successUrl = '',
   failureUrl = '',
   relayerUrl = '',
+  allowToUseUserBalance = true,
 }: FastAuthWalletParams = {}): WalletModuleFactory<BrowserWallet> {
   return async (moduleOptions) => {
     return {
@@ -433,6 +437,7 @@ export function setupFastAuthWallet({
           params: {
             walletUrl: resolveWalletUrl(options.options.network, walletUrl),
             relayerUrl,
+            allowToUseUserBalance,
           },
         });
       },
