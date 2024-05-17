@@ -22,17 +22,14 @@ const PENDING_ACCESS_KEY_PREFIX = 'pending_key'; // browser storage key for a pe
 
 type SignMessageEventType = 'signedTransactions' | 'signedDelegates';
 
-type SignedTransactionsResult = {
-  signedTransactions: SignedTransaction[];
+type SignedResult<T> = {
+  result: T[];
   closeDialog: () => void;
   error?: string;
 };
 
-type SignedDelegatesResult = {
-  signedDelegates: SignedDelegate[];
-  closeDialog: () => void;
-  error?: string;
-};
+type SignedTransactionsResult = SignedResult<SignedTransaction>;
+type SignedDelegatesResult = SignedResult<SignedDelegate>;
 interface SignInOptions {
   contractId?: string;
   methodNames?: string[];
