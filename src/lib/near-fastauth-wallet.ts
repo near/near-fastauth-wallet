@@ -1,6 +1,7 @@
 import { encodeSignedDelegate } from '@near-js/transactions';
 import type {
   Account,
+  Action,
   BrowserWallet,
   Network,
   Optional,
@@ -325,7 +326,13 @@ const FastAuthWallet: WalletBehaviourFactory<
       });
     },
 
-    async signAndSendSignedDelegate({ receiverId, actions }): Promise<void> {
+    async signAndSendSignedDelegate({
+      receiverId,
+      actions,
+    }: {
+      receiverId: string;
+      actions: Action[];
+    }): Promise<void> {
       await _signAndSendWithRelayer({
         transactions: [{ receiverId, actions }],
       });
@@ -334,6 +341,9 @@ const FastAuthWallet: WalletBehaviourFactory<
     async signAndSendSignedDelegates({
       transactions,
       callbackUrl,
+    }: {
+      transactions: Optional<Transaction, 'signerId'>[];
+      callbackUrl?: string;
     }): Promise<void> {
       await _signAndSendWithRelayer({
         transactions,
