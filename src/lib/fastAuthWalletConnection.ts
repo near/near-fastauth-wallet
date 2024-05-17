@@ -20,6 +20,19 @@ const CREATE_ACCOUNT_PATH = '/create-account/';
 const LOCAL_STORAGE_KEY_SUFFIX = '_wallet_auth_key';
 const PENDING_ACCESS_KEY_PREFIX = 'pending_key'; // browser storage key for a pending access key (i.e. key has been generated but we are not sure it was added yet)
 
+type SignMessageEventType = 'signedTransactions' | 'signedDelegates';
+
+type SignedTransactionsResult = {
+  signedTransactions: SignedTransaction[];
+  closeDialog: () => void;
+  error?: string;
+};
+
+type SignedDelegatesResult = {
+  signedDelegates: SignedDelegate[];
+  closeDialog: () => void;
+  error?: string;
+};
 interface SignInOptions {
   contractId?: string;
   methodNames?: string[];
@@ -282,19 +295,11 @@ export class FastAuthWalletConnection {
     }
   }
 
-  /**
-   * Requests the user to quickly sign for a transaction or batch of transactions by redirecting to the NEAR wallet.
-   */
-  async requestSignTransactions({
+  private createSignRequestUrl({
     transactions,
     meta,
     callbackUrl,
-  }: RequestSignTransactionsOptions): Promise<{
-    signedTransactions: SignedTransaction[];
-    signedDelegates: SignedDelegate[];
-    closeDialog: () => void;
-    error?: string;
-  }> {
+  }: RequestSignTransactionsOptions): URL {
     const currentUrl = new URL(window.location.href);
     const newUrl = new URL(this._walletBaseUrl + '/sign/');
 
@@ -309,43 +314,78 @@ export class FastAuthWalletConnection {
     newUrl.searchParams.set('failure_url', callbackUrl || currentUrl.href);
 
     if (meta) newUrl.searchParams.set('meta', meta);
-    // Loads transaction modal
-    loadIframeDialog(newUrl.toString());
-    return new Promise((resolve) => {
-      const listener = (e: MessageEvent) => {
-        if (
-          Object.prototype.hasOwnProperty.call(e.data, 'signedDelegates') ||
-          Object.prototype.hasOwnProperty.call(e.data, 'signedTransactions')
-        ) {
-          window.removeEventListener('message', listener);
-          resolve({
-            signedDelegates: e.data.signedDelegates
-              ? e.data.signedDelegates
-                  .split(',')
-                  .map((s: string) =>
-                    deserialize(
-                      SCHEMA,
-                      SignedDelegate,
-                      Buffer.from(s, 'base64')
-                    )
-                  )
-              : [],
-            signedTransactions: e.data.signedTransactions
-              ? e.data.signedTransactions
-                  .split(',')
-                  .map((s: string) =>
-                    deserialize(
-                      SCHEMA,
-                      SignedTransaction,
-                      Buffer.from(s, 'base64')
-                    )
-                  )
-              : [],
-            closeDialog: () => undefined,
-            error: e.data.error,
-          });
+
+    return newUrl;
+  }
+
+  private handleSignMessageEvent<T extends SignMessageEventType>(
+    resolve: (
+      value: T extends 'signedTransactions'
+        ? SignedTransactionsResult
+        : SignedDelegatesResult
+    ) => void,
+    expectedKey: T
+  ) {
+    const listener = (e: MessageEvent) => {
+      if (!Object.prototype.hasOwnProperty.call(e.data, expectedKey)) return;
+
+      window.removeEventListener('message', listener);
+
+      const deserializeData = (data: string) => {
+        const buffer = Buffer.from(data, 'base64');
+        if (expectedKey === 'signedTransactions') {
+          return deserialize(SCHEMA, SignedTransaction, buffer);
+        } else {
+          return deserialize(SCHEMA, SignedDelegate, buffer);
         }
       };
+
+      const result = {
+        [expectedKey]: e.data[expectedKey]
+          ? e.data[expectedKey].split(',').map(deserializeData)
+          : [],
+        closeDialog: () => undefined,
+        error: e.data.error,
+      };
+
+      resolve(
+        result as T extends 'signedTransactions'
+          ? SignedTransactionsResult
+          : SignedDelegatesResult
+      );
+    };
+
+    return listener;
+  }
+
+  async requestSign({
+    transactions,
+    meta,
+    callbackUrl,
+    type,
+  }: RequestSignTransactionsOptions & {
+    type: 'transactions' | 'delegates';
+  }): Promise<{
+    signedTransactions?: SignedTransaction[];
+    signedDelegates?: SignedDelegate[];
+    closeDialog: () => void;
+    error?: string;
+  }> {
+    const newUrl = this.createSignRequestUrl({
+      transactions,
+      meta,
+      callbackUrl,
+    });
+    loadIframeDialog(newUrl.toString());
+
+    return new Promise((resolve) => {
+      let eventType: SignMessageEventType;
+      if (type === 'transactions') {
+        eventType = 'signedTransactions';
+      } else {
+        eventType = 'signedDelegates';
+      }
+      const listener = this.handleSignMessageEvent(resolve, eventType);
       window.addEventListener('message', listener);
     });
   }

@@ -30,13 +30,11 @@ export interface FastAuthWalletParams {
   successUrl?: string;
   failureUrl?: string;
   relayerUrl?: string;
-  allowToUseUserBalance?: boolean;
 }
 
 interface FastAuthWalletExtraOptions {
   walletUrl: string;
   relayerUrl: string;
-  allowToUseUserBalance: boolean;
 }
 
 interface FastAuthWalletState {
@@ -105,7 +103,7 @@ const FastAuthWallet: WalletBehaviourFactory<
 > = async ({ metadata, options, store, params, logger }) => {
   const _state = await setupWalletState(params, options.network);
   let relayerUrl = params.relayerUrl;
-  const allowToUseUserBalance = params.allowToUseUserBalance;
+
   const getAccounts = async (): Promise<Array<Account>> => {
     const accountId = _state.wallet.getAccountId();
     const account = _state.wallet.account();
@@ -127,7 +125,7 @@ const FastAuthWallet: WalletBehaviourFactory<
   };
 
   const transformTransactions = async (
-    transactions: Array<Optional<Transaction, 'signerId'>>
+    transactions: Optional<Transaction, 'signerId'>[]
   ) => {
     const account = _state.wallet.account();
     const { networkId, signer, provider } = account.connection;
@@ -163,6 +161,111 @@ const FastAuthWallet: WalletBehaviourFactory<
         );
       })
     );
+  };
+
+  const _signAndSendWithRelayer = async ({
+    transactions,
+    callbackUrl,
+  }: {
+    transactions: Optional<Transaction, 'signerId'>[];
+    callbackUrl?: string;
+  }): Promise<void> => {
+    const account = _state.wallet.account();
+    const needsFAK = await _getNeedFAK(transactions, account);
+
+    if (needsFAK) {
+      const { closeDialog, signedDelegates } = await _state.wallet.requestSign({
+        transactions: await transformTransactions(transactions),
+        callbackUrl,
+        type: 'delegates',
+      });
+
+      closeDialog();
+      await Promise.allSettled(
+        signedDelegates.map(async (signedDelegate) => {
+          await fetch(relayerUrl, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify(
+              Array.from(encodeSignedDelegate(signedDelegate))
+            ),
+            headers: new Headers({ 'Content-Type': 'application/json' }),
+          });
+        })
+      );
+    } else {
+      for (const { receiverId, actions } of transactions) {
+        const signedDelegate = await account.signedDelegate({
+          actions: actions.map((action) => createAction(action)),
+          blockHeightTtl: 60,
+          receiverId,
+        });
+
+        await fetch(relayerUrl, {
+          method: 'POST',
+          mode: 'cors',
+          body: JSON.stringify(
+            Array.from(encodeSignedDelegate(signedDelegate))
+          ),
+          headers: new Headers({ 'Content-Type': 'application/json' }),
+        });
+      }
+    }
+  };
+
+  const _signAndSend = async ({
+    transactions,
+    callbackUrl,
+  }: {
+    transactions: Optional<Transaction, 'signerId'>[];
+    callbackUrl?: string;
+  }): Promise<void> => {
+    const account = _state.wallet.account();
+    const connectedNearAccountWallet = _state.wallet._connectedAccount;
+    const needsFAK = await _getNeedFAK(transactions, account);
+
+    if (needsFAK) {
+      const { closeDialog, signedTransactions } =
+        await _state.wallet.requestSign({
+          transactions: await transformTransactions(transactions),
+          callbackUrl,
+          type: 'transactions',
+        });
+
+      closeDialog();
+      await Promise.allSettled(
+        signedTransactions.map(async (signedTransaction) => {
+          _state.wallet._near.connection.provider.sendTransaction(
+            signedTransaction
+          );
+        })
+      );
+    } else {
+      for (const { receiverId, actions } of transactions) {
+        const transaction =
+          // Disabling typescript to access a protected method and avoid code duplication. Open PR to allow access to signTransaction on near-api-js (https://github.com/near/near-api-js/blob/f28796267327fc6905a8c6a7051ff37aaa7bbd06/packages/accounts/src/account.ts#L145)
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          await connectedNearAccountWallet.signTransaction(
+            receiverId,
+            actions.map((action) => createAction(action))
+          );
+        await _state.near.connection.provider.sendTransaction(transaction[1]);
+      }
+    }
+  };
+
+  const _getNeedFAK = async (
+    transactions: Optional<Transaction, 'signerId'>[],
+    account: nearAPI.ConnectedWalletAccount
+  ): Promise<boolean> => {
+    const { accessKey } = await account.findAccessKey('', []);
+    return transactions.some(({ receiverId }) => {
+      return (
+        accessKey.permission !== 'FullAccess' &&
+        accessKey.permission.FunctionCall.receiver_id !== receiverId
+      );
+    });
   };
 
   return {
@@ -208,168 +311,36 @@ const FastAuthWallet: WalletBehaviourFactory<
       throw new Error(`Method not supported by ${metadata.name}`);
     },
 
-    async signAndSendTransaction({ receiverId, actions }) {
-      const account = _state.wallet.account();
-      const connectedNearAccountWallet = _state.wallet._connectedAccount;
-
-      const { accessKey } = await account.findAccessKey(
-        receiverId as string,
-        []
-      );
-
-      const needsFAK =
-        accessKey.permission !== 'FullAccess' &&
-        accessKey.permission.FunctionCall.receiver_id !== receiverId;
-
-      if (needsFAK) {
-        const { signer, networkId, provider } = account.connection;
-        const block = await provider.block({ finality: 'final' });
-        const localKey = await signer.getPublicKey(
-          account.accountId,
-          networkId
-        );
-        const txAccessKey = await account.accessKeyForTransaction(
-          receiverId as string,
-          actions.map(createAction),
-          localKey
-        );
-        const transaction = nearAPI.transactions.createTransaction(
-          account.accountId,
-          nearAPI.utils.PublicKey.from(txAccessKey.public_key),
-          receiverId as string,
-          new BN(txAccessKey.access_key.nonce).add(new BN(1)),
-          actions.map(createAction),
-          nearAPI.utils.serialize.base_decode(block.header.hash)
-        );
-
-        const arg = {
-          transactions: [transaction],
-        };
-        const { closeDialog, signedTransactions, signedDelegates } =
-          await _state.wallet.requestSignTransactions(arg);
-        closeDialog();
-
-        Promise.allSettled(
-          signedDelegates.map(async (signedDelegate, txIndex) => {
-            const res = await fetch(relayerUrl, {
-              method: 'POST',
-              mode: 'cors',
-              body: JSON.stringify(
-                Array.from(encodeSignedDelegate(signedDelegate))
-              ),
-              headers: new Headers({ 'Content-Type': 'application/json' }),
-            });
-
-            if (res.status === 400 && allowToUseUserBalance) {
-              const signedTransaction = signedTransactions[txIndex];
-              _state.near.connection.provider.sendTransaction(
-                signedTransaction
-              );
-            }
-          })
-        );
-      } else {
-        const signedDelegate = await account.signedDelegate({
-          actions: actions.map((action) => createAction(action)),
-          blockHeightTtl: 60,
-          receiverId: receiverId as string,
-        });
-
-        const res = await fetch(relayerUrl, {
-          method: 'POST',
-          mode: 'cors',
-          body: JSON.stringify(
-            Array.from(encodeSignedDelegate(signedDelegate))
-          ),
-          headers: new Headers({ 'Content-Type': 'application/json' }),
-        });
-
-        if (res.status === 400 && allowToUseUserBalance) {
-          // Disabling typescript to access a protected method and avoid code duplication. Open PR to allow access to signTransaction on near-api-js (https://github.com/near/near-api-js/blob/f28796267327fc6905a8c6a7051ff37aaa7bbd06/packages/accounts/src/account.ts#L145)
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          const transaction = await connectedNearAccountWallet.signTransaction(
-            receiverId,
-            actions.map((action) => createAction(action))
-          );
-          await _state.near.connection.provider.sendTransaction(transaction[1]);
-        }
-      }
+    async signAndSendTransaction({ receiverId, actions }): Promise<void> {
+      await _signAndSend({ transactions: [{ receiverId, actions }] });
     },
 
-    async signAndSendTransactions({ transactions, callbackUrl }) {
-      const account = _state.wallet.account();
-      const connectedNearAccountWallet = _state.wallet._connectedAccount;
-      const { accessKey } = await account.findAccessKey('', []);
-
-      const needsFAK = transactions.some(({ receiverId }) => {
-        return (
-          accessKey.permission !== 'FullAccess' &&
-          accessKey.permission.FunctionCall.receiver_id !== receiverId
-        );
+    async signAndSendTransactions({
+      transactions,
+      callbackUrl,
+    }): Promise<void> {
+      await _signAndSend({
+        transactions,
+        callbackUrl,
       });
-
-      if (needsFAK) {
-        const arg = {
-          transactions: await transformTransactions(transactions),
-          callbackUrl,
-        };
-        const { closeDialog, signedTransactions, signedDelegates } =
-          await _state.wallet.requestSignTransactions(arg);
-
-        closeDialog();
-        Promise.allSettled(
-          signedDelegates.map(async (signedDelegate, txIndex) => {
-            const res = await fetch(relayerUrl, {
-              method: 'POST',
-              mode: 'cors',
-              body: JSON.stringify(
-                Array.from(encodeSignedDelegate(signedDelegate))
-              ),
-              headers: new Headers({ 'Content-Type': 'application/json' }),
-            });
-
-            if (res.status === 400 && allowToUseUserBalance) {
-              const signedTransaction = signedTransactions[txIndex];
-              _state.wallet._near.connection.provider.sendTransaction(
-                signedTransaction
-              );
-            }
-          })
-        );
-      } else {
-        for (const { receiverId, actions } of transactions) {
-          const signedDelegate = await account.signedDelegate({
-            actions: actions.map((action) => createAction(action)),
-            blockHeightTtl: 60,
-            receiverId: receiverId as string,
-          });
-
-          const res = await fetch(relayerUrl, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(
-              Array.from(encodeSignedDelegate(signedDelegate))
-            ),
-            headers: new Headers({ 'Content-Type': 'application/json' }),
-          });
-
-          if (res.status === 400 && allowToUseUserBalance) {
-            const transaction =
-              // Disabling typescript to access a protected method and avoid code duplication. Open PR to allow access to signTransaction on near-api-js (https://github.com/near/near-api-js/blob/f28796267327fc6905a8c6a7051ff37aaa7bbd06/packages/accounts/src/account.ts#L145)
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
-              await connectedNearAccountWallet.signTransaction(
-                receiverId,
-                actions.map((action) => createAction(action))
-              );
-            await _state.near.connection.provider.sendTransaction(
-              transaction[1]
-            );
-          }
-        }
-      }
     },
+
+    async signAndSendSignedDelegate({ receiverId, actions }): Promise<void> {
+      await _signAndSendWithRelayer({
+        transactions: [{ receiverId, actions }],
+      });
+    },
+
+    async signAndSendSignedDelegates({
+      transactions,
+      callbackUrl,
+    }): Promise<void> {
+      await _signAndSendWithRelayer({
+        transactions,
+        callbackUrl,
+      });
+    },
+
     async getDerivedAddress(
       args: DerivedAddressParamEVM | DerivedAddressParamBTC
     ) {
@@ -415,7 +386,6 @@ export function setupFastAuthWallet({
   successUrl = '',
   failureUrl = '',
   relayerUrl = '',
-  allowToUseUserBalance = true,
 }: FastAuthWalletParams = {}): WalletModuleFactory<BrowserWallet> {
   return async (moduleOptions) => {
     return {
@@ -437,7 +407,6 @@ export function setupFastAuthWallet({
           params: {
             walletUrl: resolveWalletUrl(options.options.network, walletUrl),
             relayerUrl,
-            allowToUseUserBalance,
           },
         });
       },
