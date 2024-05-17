@@ -20,6 +20,7 @@ const CREATE_ACCOUNT_PATH = '/create-account/';
 const LOCAL_STORAGE_KEY_SUFFIX = '_wallet_auth_key';
 const PENDING_ACCESS_KEY_PREFIX = 'pending_key'; // browser storage key for a pending access key (i.e. key has been generated but we are not sure it was added yet)
 
+type SignMessageType = 'transactions' | 'delegates';
 type SignMessageEventType = 'signedTransactions' | 'signedDelegates';
 
 type SignedResult<T> = {
@@ -296,9 +297,21 @@ export class FastAuthWalletConnection {
     transactions,
     meta,
     callbackUrl,
-  }: RequestSignTransactionsOptions): URL {
+    type,
+  }: RequestSignTransactionsOptions & {
+    type: SignMessageType;
+  }): URL {
     const currentUrl = new URL(window.location.href);
-    const newUrl = new URL(this._walletBaseUrl + '/sign/');
+    let path: string;
+
+    // TODO: change the path for the delegates it's a breaking change that need to be done in sync with integrators
+    if (type === 'delegates') {
+      path = '/sign/';
+    } else if (type === 'transactions') {
+      path = '/sign-transaction/';
+    }
+
+    const newUrl = new URL(this._walletBaseUrl + path);
 
     newUrl.searchParams.set(
       'transactions',
@@ -361,7 +374,7 @@ export class FastAuthWalletConnection {
     callbackUrl,
     type,
   }: RequestSignTransactionsOptions & {
-    type: 'transactions' | 'delegates';
+    type: SignMessageType;
   }): Promise<{
     signedTransactions?: SignedTransaction[];
     signedDelegates?: SignedDelegate[];
@@ -372,6 +385,7 @@ export class FastAuthWalletConnection {
       transactions,
       meta,
       callbackUrl,
+      type,
     });
     loadIframeDialog(newUrl.toString());
 
