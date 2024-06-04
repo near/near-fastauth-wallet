@@ -243,15 +243,10 @@ const FastAuthWallet: WalletBehaviourFactory<
       );
     } else {
       for (const { receiverId, actions } of transactions) {
-        const transaction =
-          // Disabling typescript to access a protected method and avoid code duplication. Open PR to allow access to signTransaction on near-api-js (https://github.com/near/near-api-js/blob/f28796267327fc6905a8c6a7051ff37aaa7bbd06/packages/accounts/src/account.ts#L145)
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          await connectedNearAccountWallet.signTransaction(
-            receiverId,
-            actions.map((action) => createAction(action))
-          );
-        await _state.near.connection.provider.sendTransaction(transaction[1]);
+        await connectedNearAccountWallet.signAndSendTransaction({
+          receiverId,
+          actions: actions.map((action) => createAction(action)),
+        });
       }
     }
   };
