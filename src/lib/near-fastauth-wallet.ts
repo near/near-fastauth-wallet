@@ -210,6 +210,10 @@ const FastAuthWallet: WalletBehaviourFactory<
           ),
           headers: new Headers({ 'Content-Type': 'application/json' }),
         });
+
+        delete account.accessKeyByPublicKeyCache[
+          signedDelegate.delegateAction.publicKey.toString()
+        ];
       }
     }
   };
