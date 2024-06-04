@@ -211,6 +211,7 @@ const FastAuthWallet: WalletBehaviourFactory<
           headers: new Headers({ 'Content-Type': 'application/json' }),
         });
 
+        // Remove the cached access key, otherwise the same nonce will be used for the following transaction
         delete account.accessKeyByPublicKeyCache[
           signedDelegate.delegateAction.publicKey.toString()
         ];
