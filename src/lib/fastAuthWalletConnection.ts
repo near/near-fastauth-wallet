@@ -59,7 +59,9 @@ type BTCSendMultichainMessage = BaseSendMultichainMessage & {
   network: 'mainnet' | 'testnet';
 };
 
-type SendMultichainMessage = BTCSendMultichainMessage | EvmSendMultichainMessage;
+type SendMultichainMessage =
+  | BTCSendMultichainMessage
+  | EvmSendMultichainMessage;
 
 export class FastAuthWalletConnection {
   /** @hidden */
@@ -400,39 +402,23 @@ export class FastAuthWalletConnection {
   }
 
   async requestSignMultiChain(data: SendMultichainMessage) {
+    const checkPageLoad = (event: MessageEvent): void => {
+      if (event.data.type === 'signMultiChainLoaded') {
+        window.removeEventListener('message', checkPageLoad);
+        iframe.contentWindow?.postMessage(
+          {
+            type: 'multiChainRequest',
+            data,
+          },
+          '*'
+        );
+      }
+    };
+
+    window.addEventListener('message', checkPageLoad);
+
     const newUrl = new URL(this._walletBaseUrl + '/sign-multichain/');
     const iframe = await loadIframeDialog(newUrl.toString());
-
-    const waitForPageLoad = (): Promise<string> =>
-      new Promise((innerResolve, innerReject) => {
-        const checkPageLoad = (event: MessageEvent): void => {
-          if (event.data.type === 'signMultiChainLoaded') {
-            window.removeEventListener('message', checkPageLoad);
-            innerResolve('Page loaded successfully');
-          }
-        };
-
-        window.addEventListener('message', checkPageLoad);
-
-        setTimeout(() => {
-          window.removeEventListener('message', checkPageLoad);
-          innerReject('Page load timeout');
-        }, 500);
-      });
-
-    try {
-      await waitForPageLoad();
-
-      iframe.contentWindow?.postMessage(
-        {
-          type: 'multiChainRequest',
-          data,
-        },
-        '*'
-      );
-    } catch (error) {
-      console.error(error);
-    }
 
     return new Promise((resolve) => {
       const listener = (event: MessageEvent): void => {
