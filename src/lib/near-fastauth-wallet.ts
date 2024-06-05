@@ -227,7 +227,6 @@ const FastAuthWallet: WalletBehaviourFactory<
     callbackUrl?: string;
   }): Promise<void> => {
     const account = _state.wallet.account();
-    const connectedNearAccountWallet = _state.wallet._connectedAccount;
     const needsFAK = await _getNeedFAK(transactions, account);
 
     if (needsFAK) {
@@ -248,7 +247,7 @@ const FastAuthWallet: WalletBehaviourFactory<
       );
     } else {
       for (const { receiverId, actions } of transactions) {
-        await connectedNearAccountWallet.signAndSendTransaction({
+        await account.signAndSendTransaction({
           receiverId,
           actions: actions.map((action) => createAction(action)),
         });
