@@ -382,9 +382,6 @@ const FastAuthWallet: WalletBehaviourFactory<
     resetRelayerUrl() {
       relayerUrl = params.relayerUrl;
     },
-    async signMultiChain() {
-      console.log('calling signAndSendTransactionMultiChain');
-    },
   };
 };
 

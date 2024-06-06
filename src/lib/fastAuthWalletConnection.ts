@@ -473,39 +473,25 @@ export class FastAuthWalletConnection {
   }
 
   async requestSignMultiChain(data: SendMultichainMessage) {
-    const newUrl = new URL(this._walletBaseUrl + '/sign-multichain/');
-    const iframe = await loadIframeDialog(newUrl.toString());
-
-    const waitForPageLoad = (): Promise<string> =>
-      new Promise((innerResolve, innerReject) => {
-        const checkPageLoad = (event: MessageEvent): void => {
-          if (event.data.type === 'signMultiChainLoaded') {
-            window.removeEventListener('message', checkPageLoad);
-            innerResolve('Page loaded successfully');
+    const checkPageLoad = (event: MessageEvent): void => {
+      if (event.data.type === 'signMultiChainLoaded') {
+        event.source.postMessage(
+          {
+            type: 'multiChainRequest',
+            data,
+          },
+          {
+            targetOrigin: '*',
           }
-        };
+        );
+        window.removeEventListener('message', checkPageLoad);
+      }
+    };
 
-        window.addEventListener('message', checkPageLoad);
+    window.addEventListener('message', checkPageLoad);
 
-        setTimeout(() => {
-          window.removeEventListener('message', checkPageLoad);
-          innerReject('Page load timeout');
-        }, 500);
-      });
-
-    try {
-      await waitForPageLoad();
-
-      iframe.contentWindow?.postMessage(
-        {
-          type: 'multiChainRequest',
-          data,
-        },
-        '*'
-      );
-    } catch (error) {
-      console.error(error);
-    }
+    const newUrl = new URL(this._walletBaseUrl + '/sign-multichain/');
+    await loadIframeDialog(newUrl.toString());
 
     return new Promise((resolve) => {
       const listener = (event: MessageEvent): void => {
