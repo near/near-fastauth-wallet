@@ -401,23 +401,34 @@ export class FastAuthWalletConnection {
     return this._connectedAccount;
   }
 
-  async requestSignMultiChain(data: SendMultichainMessage) {
-    const checkPageLoad = (event: MessageEvent): void => {
-      if (event.data.type === 'signMultiChainLoaded') {
+  private _loadIframeAndPostMessage<T>(
+    rcvEventType: string,
+    sendEvtType: string,
+    data: T
+  ): void {
+    const listener = (event: MessageEvent) => {
+      if (event.data.type === rcvEventType) {
         event.source.postMessage(
           {
-            type: 'multiChainRequest',
+            type: sendEvtType,
             data,
           },
           {
             targetOrigin: '*',
           }
         );
-        window.removeEventListener('message', checkPageLoad);
+        window.removeEventListener('message', listener);
       }
     };
+    window.addEventListener('message', listener);
+  }
 
-    window.addEventListener('message', checkPageLoad);
+  async requestSignMultiChain(data: SendMultichainMessage) {
+    this._loadIframeAndPostMessage(
+      'signMultiChainLoaded',
+      'multiChainRequest',
+      data
+    );
 
     const newUrl = new URL(this._walletBaseUrl + '/sign-multichain/');
     await loadIframeDialog(newUrl.toString());
