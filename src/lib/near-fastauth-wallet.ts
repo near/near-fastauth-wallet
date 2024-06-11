@@ -400,6 +400,9 @@ const FastAuthWallet: WalletBehaviourFactory<
     resetRelayerUrl() {
       relayerUrl = params.relayerUrl;
     },
+    async signMessage(data) {
+      return _state.wallet.requestSignMessage(data);
+    },
   };
 };
 
