@@ -14,6 +14,7 @@ import {
   SignedTransaction,
 } from '@near-js/transactions';
 import { loadIframeDialog } from '../ui/reactApp';
+import { SignedMessage, SignMessageParams } from '@near-wallet-selector/core';
 
 const LOGIN_PATH = '/login/';
 const CREATE_ACCOUNT_PATH = '/create-account/';
@@ -472,16 +473,24 @@ export class FastAuthWalletConnection {
     return this._connectedAccount;
   }
 
-  private _loadIframeAndPostMessage<T>(
-    rcvEventType: string,
-    sendEvtType: string,
-    data: T
-  ): void {
+  private async _requestToIframe<T, D>({
+    evtTypes,
+    data,
+    urlPath,
+  }: {
+    evtTypes: {
+      loaded: string;
+      request: string;
+      response: string;
+    };
+    data: T;
+    urlPath: string;
+  }): Promise<D> {
     const listener = (event: MessageEvent) => {
-      if (event.data.type === rcvEventType) {
+      if (event.data.type === evtTypes.loaded) {
         event.source.postMessage(
           {
-            type: sendEvtType,
+            type: evtTypes.request,
             data,
           },
           {
@@ -492,27 +501,45 @@ export class FastAuthWalletConnection {
       }
     };
     window.addEventListener('message', listener);
-  }
 
-  async requestSignMultiChain(data: SendMultichainMessage) {
-    this._loadIframeAndPostMessage(
-      'signMultiChainLoaded',
-      'multiChainRequest',
-      data
-    );
-
-    const newUrl = new URL(this._walletBaseUrl + '/sign-multichain/');
+    const newUrl = new URL(this._walletBaseUrl + urlPath);
     await loadIframeDialog(newUrl.toString());
 
     return new Promise((resolve) => {
       const listener = (event: MessageEvent): void => {
-        if (event.data.type === 'multiChainResponse') {
+        if (event.data.type === evtTypes.response) {
           window.removeEventListener('message', listener);
           resolve(event.data);
         }
       };
 
       window.addEventListener('message', listener);
+    });
+  }
+
+  async requestSignMultiChain(data: SendMultichainMessage) {
+    return this._requestToIframe({
+      evtTypes: {
+        loaded: 'signMultiChainLoaded',
+        request: 'multiChainRequest',
+        response: 'multiChainResponse',
+      },
+      data,
+      urlPath: '/sign-multichain/',
+    });
+  }
+
+  async requestSignMessage(
+    data: SignMessageParams
+  ): Promise<SignedMessage | void> {
+    return this._requestToIframe({
+      evtTypes: {
+        loaded: 'signMessageLoaded',
+        request: 'signMessageRequest',
+        response: 'signMessageResponse',
+      },
+      data,
+      urlPath: '/sign-message/',
     });
   }
 }
