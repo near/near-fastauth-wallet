@@ -196,13 +196,13 @@ const FastAuthWallet: WalletBehaviourFactory<
       );
     } else {
       for (const { receiverId, actions } of transactions) {
-        const signedDelegate = await account.signedDelegate({
+        let signedDelegate = await account.signedDelegate({
           actions: actions.map((action) => createAction(action)),
           blockHeightTtl: 60,
           receiverId,
         });
 
-        await fetch(relayerUrl, {
+        const res = await fetch(relayerUrl, {
           method: 'POST',
           mode: 'cors',
           body: JSON.stringify(
@@ -210,11 +210,38 @@ const FastAuthWallet: WalletBehaviourFactory<
           ),
           headers: new Headers({ 'Content-Type': 'application/json' }),
         });
+        const resJSON = await res.json();
 
-        // Remove the cached access key, otherwise the same nonce will be used for the following transaction
-        delete account.accessKeyByPublicKeyCache[
-          signedDelegate.delegateAction.publicKey.toString()
-        ];
+        if (
+          resJSON?.status?.Failure?.ActionError?.kind
+            ?.DelegateActionInvalidNonce
+        ) {
+          // Remove the cached access key to prevent nonce reuse
+          delete account.accessKeyByPublicKeyCache[
+            signedDelegate.delegateAction.publicKey.toString()
+          ];
+
+          signedDelegate = await account.signedDelegate({
+            actions: actions.map((action) => createAction(action)),
+            blockHeightTtl: 60,
+            receiverId,
+          });
+
+          // Retry the transaction
+          const retryRes = await fetch(relayerUrl, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify(
+              Array.from(encodeSignedDelegate(signedDelegate))
+            ),
+            headers: new Headers({ 'Content-Type': 'application/json' }),
+          });
+
+          // Handle retry response
+          if (!retryRes.ok) {
+            throw new Error('Failed to send transaction on retry.');
+          }
+        }
       }
     }
   };
