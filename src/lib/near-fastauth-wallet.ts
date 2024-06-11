@@ -1,4 +1,4 @@
-import { encodeSignedDelegate } from '@near-js/transactions';
+import { encodeSignedDelegate, SignedDelegate } from '@near-js/transactions';
 import type {
   Account,
   Action,
@@ -195,8 +195,8 @@ const FastAuthWallet: WalletBehaviourFactory<
         })
       );
     } else {
-      for (const { receiverId, actions } of transactions) {
-        let signedDelegate = await account.signedDelegate({
+      const sendTransaction = async (receiverId: string, actions: Action[]) => {
+        const signedDelegate = await account.signedDelegate({
           actions: actions.map((action) => createAction(action)),
           blockHeightTtl: 60,
           receiverId,
@@ -210,35 +210,26 @@ const FastAuthWallet: WalletBehaviourFactory<
           ),
           headers: new Headers({ 'Content-Type': 'application/json' }),
         });
-        const resJSON = await res.json();
 
+        // Remove the cached access key to prevent nonce reuse
+        delete account.accessKeyByPublicKeyCache[
+          signedDelegate.delegateAction.publicKey.toString()
+        ];
+
+        return res.json();
+      };
+
+      for (const { receiverId, actions } of transactions) {
+        const resJSON = await sendTransaction(receiverId, actions);
+
+        // Retry transaction on nonce error
         if (
           resJSON?.status?.Failure?.ActionError?.kind
             ?.DelegateActionInvalidNonce
         ) {
-          // Remove the cached access key to prevent nonce reuse
-          delete account.accessKeyByPublicKeyCache[
-            signedDelegate.delegateAction.publicKey.toString()
-          ];
+          const retryResJSON = await sendTransaction(receiverId, actions);
 
-          signedDelegate = await account.signedDelegate({
-            actions: actions.map((action) => createAction(action)),
-            blockHeightTtl: 60,
-            receiverId,
-          });
-
-          // Retry the transaction
-          const retryRes = await fetch(relayerUrl, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(
-              Array.from(encodeSignedDelegate(signedDelegate))
-            ),
-            headers: new Headers({ 'Content-Type': 'application/json' }),
-          });
-
-          // Handle retry response
-          if (!retryRes.ok) {
+          if (!retryResJSON.ok) {
             throw new Error('Failed to send transaction on retry.');
           }
         }
