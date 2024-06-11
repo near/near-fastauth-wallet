@@ -343,7 +343,7 @@ const FastAuthWallet: WalletBehaviourFactory<
       });
     },
 
-    async signAndSendSignedDelegate({
+    async signAndSendDelegateAction({
       receiverId,
       actions,
     }: {
@@ -355,7 +355,7 @@ const FastAuthWallet: WalletBehaviourFactory<
       });
     },
 
-    async signAndSendSignedDelegates({
+    async signAndSendDelegateActions({
       transactions,
       callbackUrl,
     }: {
