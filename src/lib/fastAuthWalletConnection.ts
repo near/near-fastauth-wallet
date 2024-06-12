@@ -4,9 +4,10 @@ import type {
   Near,
   WalletConnection,
 } from 'near-api-js';
+import * as nearAPI from 'near-api-js';
 import { KeyPair, utils } from 'near-api-js';
 import { ConnectedWalletAccount } from 'near-api-js';
-import { deserialize } from 'near-api-js/lib/utils/serialize';
+import { deserialize, serialize } from 'near-api-js/lib/utils/serialize';
 import type { Transaction } from '@near-js/transactions';
 import {
   SCHEMA,
@@ -15,6 +16,8 @@ import {
 } from '@near-js/transactions';
 import { loadIframeDialog } from '../ui/reactApp';
 import { SignedMessage, SignMessageParams } from '@near-wallet-selector/core';
+import { PublicKey } from 'near-api-js/lib/utils';
+import { sha256 } from 'js-sha256';
 
 const LOGIN_PATH = '/login/';
 const CREATE_ACCOUNT_PATH = '/create-account/';
@@ -532,14 +535,70 @@ export class FastAuthWalletConnection {
   async requestSignMessage(
     data: SignMessageParams
   ): Promise<SignedMessage | void> {
-    return this._requestToIframe({
-      evtTypes: {
-        loaded: 'signMessageLoaded',
-        request: 'signMessageRequest',
-        response: 'signMessageResponse',
-      },
-      data,
-      urlPath: '/sign-message/',
+    return (
+      await this._requestToIframe<SignMessageParams, { data: SignedMessage }>({
+        evtTypes: {
+          loaded: 'signMessageLoaded',
+          request: 'signMessageRequest',
+          response: 'signMessageResponse',
+        },
+        data,
+        urlPath: '/sign-message/',
+      })
+    ).data;
+  }
+
+  async verifyMessageSignature(
+    message: SignMessageParams,
+    data: SignedMessage
+  ): Promise<boolean> {
+    const signatureBytes = Uint8Array.from(
+      Buffer.from(data.signature, 'base64')
+    );
+    const keyPair = PublicKey.fromString(data.publicKey);
+
+    class Payload {
+      tag: number;
+      message: string;
+      nonce: number[];
+      recipient: string;
+
+      constructor({ message, nonce, recipient }: Payload) {
+        this.tag = 2147484061;
+        Object.assign(this, {
+          message,
+          nonce,
+          recipient,
+        });
+      }
+    }
+
+    const payload = new Payload({
+      tag: 2147484061,
+      message: message.message,
+      nonce: Array.from(message.nonce),
+      recipient: message.recipient,
     });
+
+    const schema = new Map([
+      [
+        Payload,
+        {
+          kind: 'struct',
+          fields: [
+            ['tag', 'u32'],
+            ['message', 'string'],
+            ['nonce', ['u8']],
+            ['recipient', 'string'],
+          ],
+        },
+      ],
+    ]);
+    const borshPayload = serialize(schema, payload);
+
+    const messageHash = sha256.array(borshPayload);
+    const messageHashBytes = new Uint8Array(messageHash);
+
+    return keyPair.verify(messageHashBytes, signatureBytes);
   }
 }

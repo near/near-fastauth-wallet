@@ -16,6 +16,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "antd": "^5.12.8",
     "class-variance-authority": "^0.7.0",
+    "js-sha256": "^0.11.0",
     "multichain-tools": "^1.0.8",
     "near-api-js": "^2.1.4",
     "tslib": "^2.3.0",
@@ -53,7 +54,7 @@
     "vitest": "~0.32.0"
   },
   "type": "commonjs",
-  "main": "./src/index.js",
+  "main": "./src/index.ts",
   "typings": "./src/index.d.ts",
   "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72"
 }

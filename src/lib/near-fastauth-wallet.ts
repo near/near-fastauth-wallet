@@ -1,10 +1,12 @@
-import { encodeSignedDelegate, SignedDelegate } from '@near-js/transactions';
+import { encodeSignedDelegate } from '@near-js/transactions';
 import type {
   Account,
   Action,
   BrowserWallet,
   Network,
   Optional,
+  SignedMessage,
+  SignMessageParams,
   Transaction,
   WalletBehaviourFactory,
   WalletModuleFactory,
@@ -401,7 +403,17 @@ const FastAuthWallet: WalletBehaviourFactory<
       relayerUrl = params.relayerUrl;
     },
     async signMessage(data) {
-      return _state.wallet.requestSignMessage(data);
+      const ret = await _state.wallet.requestSignMessage(data);
+      if (ret) {
+        const isValidSignature = await _state.wallet.verifyMessageSignature(
+          data,
+          ret
+        );
+        if (!isValidSignature) {
+          throw new Error('Invalid signature');
+        }
+      }
+      return ret;
     },
   };
 };
