@@ -535,8 +535,11 @@ export class FastAuthWalletConnection {
   async requestSignMessage(
     data: SignMessageParams
   ): Promise<SignedMessage | void> {
-    return (
-      await this._requestToIframe<SignMessageParams, { data: SignedMessage }>({
+    const res = (
+      await this._requestToIframe<
+        SignMessageParams,
+        { data: { ok: boolean; data: SignedMessage } }
+      >({
         evtTypes: {
           loaded: 'signMessageLoaded',
           request: 'signMessageRequest',
@@ -546,16 +549,22 @@ export class FastAuthWalletConnection {
         urlPath: '/sign-message/',
       })
     ).data;
+
+    if (!res.ok) {
+      throw new Error('Failed to sign message');
+    }
+
+    return res.data;
   }
 
   async verifyMessageSignature(
     message: SignMessageParams,
-    data: SignedMessage
+    signedMessage: SignedMessage
   ): Promise<boolean> {
     const signatureBytes = Uint8Array.from(
-      Buffer.from(data.signature, 'base64')
+      Buffer.from(signedMessage.signature, 'base64')
     );
-    const keyPair = PublicKey.fromString(data.publicKey);
+    const keyPair = PublicKey.fromString(signedMessage.publicKey);
 
     class Payload {
       tag: number;

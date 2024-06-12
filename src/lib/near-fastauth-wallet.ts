@@ -407,9 +407,20 @@ const FastAuthWallet: WalletBehaviourFactory<
     },
     async verifyMessageSignature(
       message: SignMessageParams,
-      data: SignedMessage
+      signedMessage: SignedMessage
     ): Promise<boolean> {
-      return _state.wallet.verifyMessageSignature(message, data);
+      const accessKeys = await _state.wallet.account().getAccessKeys();
+      const isFullAccessKey = accessKeys.some(
+        (key) =>
+          key.public_key === signedMessage.publicKey.toString() &&
+          key.access_key.permission === 'FullAccess'
+      );
+
+      if (!isFullAccessKey) {
+        return false;
+      }
+
+      return _state.wallet.verifyMessageSignature(message, signedMessage);
     },
   };
 };
