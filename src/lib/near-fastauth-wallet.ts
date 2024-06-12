@@ -403,17 +403,13 @@ const FastAuthWallet: WalletBehaviourFactory<
       relayerUrl = params.relayerUrl;
     },
     async signMessage(data) {
-      const ret = await _state.wallet.requestSignMessage(data);
-      if (ret) {
-        const isValidSignature = await _state.wallet.verifyMessageSignature(
-          data,
-          ret
-        );
-        if (!isValidSignature) {
-          throw new Error('Invalid signature');
-        }
-      }
-      return ret;
+      return _state.wallet.requestSignMessage(data);
+    },
+    async verifyMessageSignature(
+      message: SignMessageParams,
+      data: SignedMessage
+    ): Promise<boolean> {
+      return _state.wallet.verifyMessageSignature(message, data);
     },
   };
 };

@@ -594,10 +594,9 @@ export class FastAuthWalletConnection {
         },
       ],
     ]);
-    const borshPayload = serialize(schema, payload);
-
-    const messageHash = sha256.array(borshPayload);
-    const messageHashBytes = new Uint8Array(messageHash);
+    const messageHashBytes = new Uint8Array(
+      sha256.array(serialize(schema, payload))
+    );
 
     return keyPair.verify(messageHashBytes, signatureBytes);
   }
