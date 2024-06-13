@@ -472,7 +472,7 @@ export class FastAuthWalletConnection {
     return this._connectedAccount;
   }
 
-  async requestSignMultiChain(data: SendMultichainMessage) {
+  async requestSignAndSendMultiChain(data: SendMultichainMessage) {
     const checkPageLoad = (event: MessageEvent): void => {
       if (event.data.type === 'signMultiChainLoaded') {
         event.source.postMessage(

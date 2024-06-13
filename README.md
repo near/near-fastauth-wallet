@@ -71,6 +71,76 @@ const derivedBTCAddress = await fastAuthWallet.getDerivedAddress({
 console.log('Derived BTC Address:', derivedBTCAddress);
 ```
 
+## `signAndSendMultiChainTransaction`
+
+### Purpose:
+
+The signAndSendMultiChainTransaction method is designed to handle the signing and sending of transactions across multiple blockchain networks. Currently supports EVM and BTC.
+
+### Parameters:
+
+- `data`: This parameter is an object that conforms to the `SendMultichainMessage` type, which can be either `BTCSendMultichainMessage` or `EvmSendMultichainMessage`.
+
+#### For EVM (`EvmSendMultichainMessage`):
+
+- `chain` (number): The unique identifier for the blockchain. See: [SLIP-0044 documentation](https://github.com/satoshilabs/slips/blob/master/slip-0044.md) for more details.
+- `domain` (optional, string): The key domain used on the derivation path. See: [NEAR Chain Signatures Documentation](https://docs.near.org/build/chain-abstraction/chain-signatures)
+- `to` (string): The recipient address.
+- `value` (bigint): The value to be transferred in wei
+- `meta` (optional, object): Additional metadata for the transaction.
+- `from` (string): The sender address.
+- `chainId` (bigint): The chainId for the EVM network. See: [Chainlist](https://chainlist.org/).
+- `maxFeePerGas` (optional, bigint): The maximum fee per gas unit in wei
+- `maxPriorityFeePerGas` (optional, bigint): The maximum priority fee per gas unit in wei
+- `gasLimit` (optional, number): The gas limit for the transaction in wei
+
+#### For BTC (`BTCSendMultichainMessage`):
+
+- `chain` (number): The unique identifier for the blockchain. See: [SLIP-0044 documentation](https://github.com/satoshilabs/slips/blob/master/slip-0044.md) for more details.
+- `domain` (optional, string): The key domain used on the derivation path. See: [NEAR Chain Signatures Documentation](https://docs.near.org/build/chain-abstraction/chain-signatures)
+- `to` (string): The recipient address.
+- `value` (bigint): The value to be transferred in satoshis
+- `meta` (optional, object): Additional metadata for the transaction.
+- `from` (string): The sender address.
+- `network` ('mainnet' | 'testnet'): The Bitcoin network type.
+
+### Return Value:
+
+The method returns a promise that resolves once the multi-chain transaction signing request is completed.
+
+### Code Examples:
+
+#### Example 1: Signing an EVM Transaction
+
+```typescript
+const evmTransactionData = {
+  chain: 60,
+  domain: 'http://localhost:4200',
+  to: '0x4174678c78fEaFd778c1ff319D5D326701449b25',
+  value: 10000000000000000n,
+  from: '0x0e80ec32e58cf38eb69ac9bff0adb2e637dc49f5',
+  chainId: 11155111n,
+};
+
+await fastAuthWallet.signMultiChainTransaction(evmTransactionData);
+console.log('EVM transaction signed successfully');
+```
+
+#### Example 2: Signing a BTC Transaction
+
+```typescript
+const btcTransactionData = {
+  chain: 0,
+  from: 'mq3jS53tKSBGt3hfyDVaaKHQ37N3EWY7uQ',
+  network: 'testnet',
+  to: 'tb1qz9f5pqk3t0lhrsuppyzrctdtrtlcewjhy0jngu',
+  value: 1000000n,
+};
+
+await fastAuthWallet.signMultiChainTransaction(btcTransactionData);
+console.log('BTC transaction signed successfully');
+```
+
 ### Repository Examples:
 
 For more practical examples and a deeper understanding of how to use the `fastAuthWallet`, you can refer to the following repository:
