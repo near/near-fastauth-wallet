@@ -78,7 +78,7 @@ import canonicalize from 'canonicalize';
 
 const path = canonicalize({
   chain: 60,
-  domain: 'example.com',
+  domain: 'http://localhost:4200',
 });
 
 console.log('Derivation Path:', path);
