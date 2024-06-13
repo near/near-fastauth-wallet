@@ -31,14 +31,14 @@ The `getDerivedAddress` method is designed to get a derived address for either E
 
 - `type` (string): Must be 'EVM'.
 - `path` (string): The derivation path for the address. See: [NEAR Chain Signatures Documentation](https://docs.near.org/build/chain-abstraction/chain-signatures)
-- `contract` (`ChainSignatureContracts`): The contract used to send get the signature and public key. Use: `v2.multichain-mpc.testnet`
+- `contract` (`ChainSignatureContracts`): The contract used to send get the signature and public key. Use `v2.multichain-mpc.testnet` for testnet
 
 #### For BTC (`DerivedAddressParamBTC`):
 
 - `type` (string): Must be 'BTC'.
 - `path` (string): The derivation path for the address. See: [NEAR Chain Signatures Documentation](https://docs.near.org/build/chain-abstraction/chain-signatures)
 - `btcNetworkId` (`BTCNetworkIds`): The Bitcoin network ID. Options are 'mainnet' or 'testnet'.
-- `contract` (`ChainSignatureContracts`): The contract used to send get the signature and public key. Use: `v2.multichain-mpc.testnet`
+- `contract` (`ChainSignatureContracts`): The contract used to send get the signature and public key. Use `v2.multichain-mpc.testnet` for testnet
 
 ### Return Value:
 
