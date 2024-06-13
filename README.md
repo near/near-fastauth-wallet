@@ -21,7 +21,7 @@ Run `nx test near-fastauth-wallet` to execute the unit tests via [Jest](https://
 
 ### Purpose:
 
-The `getDerivedAddress` method is designed to get a derived address for either Ethereum Virtual Machine (EVM) or Bitcoin (BTC) networks based on the provided parameters.
+The `getDerivedAddress` method is designed to get a derived address for either Ethereum Virtual Machine (EVM) or Bitcoin (BTC) networks based on the provided path.
 
 ### Parameters:
 
@@ -90,9 +90,9 @@ The signAndSendMultiChainTransaction method is designed to handle the signing an
 - `meta` (optional, object): Additional metadata for the transaction.
 - `from` (string): The sender address.
 - `chainId` (bigint): The chainId for the EVM network. See: [Chainlist](https://chainlist.org/).
-- `maxFeePerGas` (optional, bigint): The maximum fee per gas unit in wei
-- `maxPriorityFeePerGas` (optional, bigint): The maximum priority fee per gas unit in wei
-- `gasLimit` (optional, number): The gas limit for the transaction in wei
+- `maxFeePerGas` (optional, bigint): The maximum fee per gas unit
+- `maxPriorityFeePerGas` (optional, bigint): The maximum priority fee per gas unit
+- `gasLimit` (optional, number): The gas limit for the transaction
 
 #### For BTC (`BTCSendMultichainMessage`):
 
