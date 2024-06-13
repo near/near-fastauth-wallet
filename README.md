@@ -122,7 +122,7 @@ const evmTransactionData = {
   chainId: 11155111n,
 };
 
-await fastAuthWallet.signMultiChainTransaction(evmTransactionData);
+await fastAuthWallet.signAndSendMultiChainTransaction(evmTransactionData);
 console.log('EVM transaction signed successfully');
 ```
 
@@ -137,7 +137,7 @@ const btcTransactionData = {
   value: 1000000n,
 };
 
-await fastAuthWallet.signMultiChainTransaction(btcTransactionData);
+await fastAuthWallet.signAndSendMultiChainTransaction(btcTransactionData);
 console.log('BTC transaction signed successfully');
 ```
 
