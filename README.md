@@ -96,7 +96,7 @@ The signAndSendMultiChainTransaction method is designed to handle the signing an
 
 #### For EVM (`EvmSendMultichainMessage`):
 
-- `chain` (number): The unique identifier for the blockchain. See: [SLIP-0044 documentation](https://github.com/satoshilabs/slips/blob/master/slip-0044.md) for more details.
+- `chain` (number): The unique identifier for the blockchain. Use 60 for EVM. See: [SLIP-0044 documentation](https://github.com/satoshilabs/slips/blob/master/slip-0044.md) for more details.
 - `domain` (optional, string): The key domain used on the derivation path. See: [NEAR Chain Signatures Documentation](https://docs.near.org/build/chain-abstraction/chain-signatures)
 - `to` (string): The recipient address.
 - `value` (bigint): The value to be transferred in wei
@@ -109,7 +109,7 @@ The signAndSendMultiChainTransaction method is designed to handle the signing an
 
 #### For BTC (`BTCSendMultichainMessage`):
 
-- `chain` (number): The unique identifier for the blockchain. See: [SLIP-0044 documentation](https://github.com/satoshilabs/slips/blob/master/slip-0044.md) for more details.
+- `chain` (number): The unique identifier for the blockchain. Use 0 for BTC. See: [SLIP-0044 documentation](https://github.com/satoshilabs/slips/blob/master/slip-0044.md) for more details.
 - `domain` (optional, string): The key domain used on the derivation path. See: [NEAR Chain Signatures Documentation](https://docs.near.org/build/chain-abstraction/chain-signatures)
 - `to` (string): The recipient address.
 - `value` (bigint): The value to be transferred in satoshis
