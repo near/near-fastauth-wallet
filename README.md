@@ -71,6 +71,19 @@ const derivedBTCAddress = await fastAuthWallet.getDerivedAddress({
 console.log('Derived BTC Address:', derivedBTCAddress);
 ```
 
+#### Example 3: Getting the path
+
+```typescript
+import canonicalize from 'canonicalize';
+
+const path = canonicalize({
+  chain: 60,
+  domain: 'example.com',
+});
+
+console.log('Derivation Path:', path);
+```
+
 ## `signAndSendMultiChainTransaction`
 
 ### Purpose:
