@@ -74,7 +74,7 @@ type BTCSendMultichainMessage = BaseSendMultichainMessage & {
   network: 'mainnet' | 'testnet';
 };
 
-type SendMultichainMessage =
+export type SendMultichainMessage =
   | BTCSendMultichainMessage
   | EvmSendMultichainMessage;
 

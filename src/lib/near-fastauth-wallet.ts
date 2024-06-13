@@ -22,7 +22,10 @@ import {
 } from 'multichain-tools';
 
 import icon from './fast-auth-icon';
-import { FastAuthWalletConnection } from './fastAuthWalletConnection';
+import {
+  FastAuthWalletConnection,
+  SendMultichainMessage,
+} from './fastAuthWalletConnection';
 
 export interface FastAuthWalletParams {
   walletUrl?: string;
@@ -391,7 +394,7 @@ const FastAuthWallet: WalletBehaviourFactory<
         throw new Error('Unsupported chain type');
       }
     },
-    async signMultiChainTransaction(data) {
+    async signMultiChainTransaction(data: SendMultichainMessage) {
       await _state.wallet.requestSignMultiChain(data);
     },
     setRelayerUrl({ relayerUrl: relayerUrlArg }) {
