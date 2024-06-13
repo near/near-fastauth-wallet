@@ -49,17 +49,13 @@ interface FastAuthWalletState {
 
 interface DerivedAddressParamEVM {
   type: 'EVM';
-  signerId: string;
   path: string;
-  networkId: NearNetworkIds;
   contract: ChainSignatureContracts;
 }
 
 interface DerivedAddressParamBTC {
   type: 'BTC';
-  signerId: string;
   path: string;
-  networkId: NearNetworkIds;
   btcNetworkId: BTCNetworkIds;
   contract: ChainSignatureContracts;
 }
@@ -374,18 +370,20 @@ const FastAuthWallet: WalletBehaviourFactory<
     async getDerivedAddress(
       args: DerivedAddressParamEVM | DerivedAddressParamBTC
     ) {
+      const account = _state.wallet.account();
+
       if (args.type === 'EVM') {
         return await fetchDerivedEVMAddress(
-          args.signerId,
+          account.accountId,
           args.path,
-          args.networkId,
+          account.connection.networkId as NearNetworkIds,
           args.contract
         );
       } else if (args.type === 'BTC') {
         const address = await fetchDerivedBTCAddress(
-          args.signerId,
+          account.accountId,
           args.path,
-          args.networkId,
+          account.connection.networkId as NearNetworkIds,
           args.btcNetworkId,
           args.contract
         );
