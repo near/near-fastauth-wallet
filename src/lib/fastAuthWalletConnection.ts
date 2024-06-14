@@ -557,7 +557,7 @@ export class FastAuthWalletConnection {
     return res.data;
   }
 
-  async verifyMessageSignature(
+  async verifySignMessage(
     message: SignMessageParams,
     signedMessage: SignedMessage
   ): Promise<boolean> {
@@ -571,13 +571,15 @@ export class FastAuthWalletConnection {
       message: string;
       nonce: number[];
       recipient: string;
+      callbackUrl: string;
 
-      constructor({ message, nonce, recipient }: Payload) {
+      constructor({ message, nonce, recipient, callbackUrl }: Payload) {
         this.tag = 2147484061;
         Object.assign(this, {
           message,
           nonce,
           recipient,
+          callbackUrl,
         });
       }
     }
@@ -587,6 +589,7 @@ export class FastAuthWalletConnection {
       message: message.message,
       nonce: Array.from(message.nonce),
       recipient: message.recipient,
+      callbackUrl: message.callbackUrl,
     });
 
     const schema = new Map([
@@ -597,8 +600,9 @@ export class FastAuthWalletConnection {
           fields: [
             ['tag', 'u32'],
             ['message', 'string'],
-            ['nonce', ['u8']],
+            ['nonce', ['u8', 32]],
             ['recipient', 'string'],
+            ['callbackUrl', { kind: 'option', type: 'string' }],
           ],
         },
       ],

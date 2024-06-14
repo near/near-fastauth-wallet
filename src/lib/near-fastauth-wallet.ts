@@ -405,7 +405,7 @@ const FastAuthWallet: WalletBehaviourFactory<
     async signMessage(data) {
       return _state.wallet.requestSignMessage(data);
     },
-    async verifyMessageSignature(
+    async verifySignMessage(
       message: SignMessageParams,
       signedMessage: SignedMessage
     ): Promise<boolean> {
@@ -420,7 +420,7 @@ const FastAuthWallet: WalletBehaviourFactory<
         return false;
       }
 
-      return _state.wallet.verifyMessageSignature(message, signedMessage);
+      return _state.wallet.verifySignMessage(message, signedMessage);
     },
   };
 };
