@@ -573,8 +573,9 @@ export class FastAuthWalletConnection {
       recipient: string;
       callbackUrl: string;
 
-      constructor({ message, nonce, recipient, callbackUrl }: Payload) {
+      constructor({ tag, message, nonce, recipient, callbackUrl }: Payload) {
         Object.assign(this, {
+          tag,
           message,
           nonce,
           recipient,
