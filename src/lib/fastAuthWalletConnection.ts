@@ -4,9 +4,10 @@ import type {
   Near,
   WalletConnection,
 } from 'near-api-js';
+import * as nearAPI from 'near-api-js';
 import { KeyPair, utils } from 'near-api-js';
 import { ConnectedWalletAccount } from 'near-api-js';
-import { deserialize } from 'near-api-js/lib/utils/serialize';
+import { deserialize, serialize } from 'near-api-js/lib/utils/serialize';
 import type { Transaction } from '@near-js/transactions';
 import {
   SCHEMA,
@@ -14,6 +15,9 @@ import {
   SignedTransaction,
 } from '@near-js/transactions';
 import { loadIframeDialog } from '../ui/reactApp';
+import { SignedMessage, SignMessageParams } from '@near-wallet-selector/core';
+import { PublicKey } from 'near-api-js/lib/utils';
+import { sha256 } from 'js-sha256';
 
 const LOGIN_PATH = '/login/';
 const CREATE_ACCOUNT_PATH = '/create-account/';
@@ -472,30 +476,41 @@ export class FastAuthWalletConnection {
     return this._connectedAccount;
   }
 
-  async requestSignMultiChain(data: SendMultichainMessage) {
-    const checkPageLoad = (event: MessageEvent): void => {
-      if (event.data.type === 'signMultiChainLoaded') {
+  private async _requestToIframe<T, D>({
+    evtTypes,
+    data,
+    urlPath,
+  }: {
+    evtTypes: {
+      loaded: string;
+      request: string;
+      response: string;
+    };
+    data: T;
+    urlPath: string;
+  }): Promise<D> {
+    const listener = (event: MessageEvent) => {
+      if (event.data.type === evtTypes.loaded) {
         event.source.postMessage(
           {
-            type: 'multiChainRequest',
+            type: evtTypes.request,
             data,
           },
           {
             targetOrigin: '*',
           }
         );
-        window.removeEventListener('message', checkPageLoad);
+        window.removeEventListener('message', listener);
       }
     };
+    window.addEventListener('message', listener);
 
-    window.addEventListener('message', checkPageLoad);
-
-    const newUrl = new URL(this._walletBaseUrl + '/sign-multichain/');
+    const newUrl = new URL(this._walletBaseUrl + urlPath);
     await loadIframeDialog(newUrl.toString());
 
     return new Promise((resolve) => {
       const listener = (event: MessageEvent): void => {
-        if (event.data.type === 'multiChainResponse') {
+        if (event.data.type === evtTypes.response) {
           window.removeEventListener('message', listener);
           resolve(event.data);
         }
@@ -503,5 +518,102 @@ export class FastAuthWalletConnection {
 
       window.addEventListener('message', listener);
     });
+  }
+
+  async requestSignMultiChain(data: SendMultichainMessage) {
+    return this._requestToIframe({
+      evtTypes: {
+        loaded: 'signMultiChainLoaded',
+        request: 'multiChainRequest',
+        response: 'multiChainResponse',
+      },
+      data,
+      urlPath: '/sign-multichain/',
+    });
+  }
+
+  async requestSignMessage(
+    data: SignMessageParams
+  ): Promise<SignedMessage | void> {
+    const res = (
+      await this._requestToIframe<
+        SignMessageParams,
+        { data: { ok: boolean; data: SignedMessage } }
+      >({
+        evtTypes: {
+          loaded: 'signMessageLoaded',
+          request: 'signMessageRequest',
+          response: 'signMessageResponse',
+        },
+        data,
+        urlPath: '/sign-message/',
+      })
+    ).data;
+
+    if (!res.ok) {
+      throw new Error('Failed to sign message');
+    }
+
+    return res.data;
+  }
+
+  async verifySignMessage(
+    message: SignMessageParams,
+    signedMessage: SignedMessage
+  ): Promise<boolean> {
+    const signatureBytes = Uint8Array.from(
+      Buffer.from(signedMessage.signature, 'base64')
+    );
+    const keyPair = PublicKey.fromString(signedMessage.publicKey);
+
+    class Payload {
+      tag: number;
+      message: string;
+      nonce: number[];
+      recipient: string;
+      callbackUrl: string;
+
+      constructor({ tag, message, nonce, recipient, callbackUrl }: Payload) {
+        Object.assign(this, {
+          tag,
+          message,
+          nonce,
+          recipient,
+          callbackUrl,
+        });
+      }
+    }
+
+    // https://github.com/near/NEPs/blob/master/neps/nep-0413.md#why-the-message-must-not-be-a-transaction-how-to-ensure-this
+    const nonTransactionTag = 2147484061;
+
+    const payload = new Payload({
+      tag: nonTransactionTag,
+      message: message.message,
+      nonce: Array.from(message.nonce),
+      recipient: message.recipient,
+      callbackUrl: message.callbackUrl,
+    });
+
+    const schema = new Map([
+      [
+        Payload,
+        {
+          kind: 'struct',
+          fields: [
+            ['tag', 'u32'],
+            ['message', 'string'],
+            ['nonce', ['u8', 32]],
+            ['recipient', 'string'],
+            ['callbackUrl', { kind: 'option', type: 'string' }],
+          ],
+        },
+      ],
+    ]);
+    const messageHashBytes = new Uint8Array(
+      sha256.array(serialize(schema, payload))
+    );
+
+    return keyPair.verify(messageHashBytes, signatureBytes);
   }
 }
