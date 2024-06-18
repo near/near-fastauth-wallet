@@ -574,7 +574,6 @@ export class FastAuthWalletConnection {
       callbackUrl: string;
 
       constructor({ message, nonce, recipient, callbackUrl }: Payload) {
-        this.tag = 2147484061;
         Object.assign(this, {
           message,
           nonce,
@@ -584,8 +583,11 @@ export class FastAuthWalletConnection {
       }
     }
 
+    // https://github.com/near/NEPs/blob/master/neps/nep-0413.md#why-the-message-must-not-be-a-transaction-how-to-ensure-this
+    const nonTransactionTag = 2147484061;
+
     const payload = new Payload({
-      tag: 2147484061,
+      tag: nonTransactionTag,
       message: message.message,
       nonce: Array.from(message.nonce),
       recipient: message.recipient,
