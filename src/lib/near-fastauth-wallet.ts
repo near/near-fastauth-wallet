@@ -1,10 +1,12 @@
-import { encodeSignedDelegate, SignedDelegate } from '@near-js/transactions';
+import { encodeSignedDelegate } from '@near-js/transactions';
 import type {
   Account,
   Action,
   BrowserWallet,
   Network,
   Optional,
+  SignedMessage,
+  SignMessageParams,
   Transaction,
   WalletBehaviourFactory,
   WalletModuleFactory,
@@ -400,6 +402,26 @@ const FastAuthWallet: WalletBehaviourFactory<
     },
     resetRelayerUrl() {
       relayerUrl = params.relayerUrl;
+    },
+    async signMessage(data) {
+      return _state.wallet.requestSignMessage(data);
+    },
+    async verifySignMessage(
+      message: SignMessageParams,
+      signedMessage: SignedMessage
+    ): Promise<boolean> {
+      const accessKeys = await _state.wallet.account().getAccessKeys();
+      const isFullAccessKey = accessKeys.some(
+        (key) =>
+          key.public_key === signedMessage.publicKey.toString() &&
+          key.access_key.permission === 'FullAccess'
+      );
+
+      if (!isFullAccessKey) {
+        return false;
+      }
+
+      return _state.wallet.verifySignMessage(message, signedMessage);
     },
   };
 };
