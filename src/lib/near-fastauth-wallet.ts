@@ -232,7 +232,7 @@ const FastAuthWallet: WalletBehaviourFactory<
           const retryResJSON = await sendTransaction(receiverId, actions);
 
           if (!retryResJSON.ok) {
-            throw new Error('Failed to send transaction on retry.');
+            console.error('Failed to send transaction on retry.');
           }
         }
       }
@@ -331,21 +331,21 @@ const FastAuthWallet: WalletBehaviourFactory<
       throw new Error(`Method not supported by ${metadata.name}`);
     },
 
-    async signAndSendTransaction({ receiverId, actions }): Promise<void> {
-      await _signAndSend({ transactions: [{ receiverId, actions }] });
-    },
+    // async signAndSendTransaction({ receiverId, actions }): Promise<void> {
+    //   await _signAndSend({ transactions: [{ receiverId, actions }] });
+    // },
 
-    async signAndSendTransactions({
-      transactions,
-      callbackUrl,
-    }): Promise<void> {
-      await _signAndSend({
-        transactions,
-        callbackUrl,
-      });
-    },
+    // async signAndSendTransactions({
+    //   transactions,
+    //   callbackUrl,
+    // }): Promise<void> {
+    //   await _signAndSend({
+    //     transactions,
+    //     callbackUrl,
+    //   });
+    // },
 
-    async signAndSendDelegateAction({
+    async signAndSendTransaction({
       receiverId,
       actions,
     }: {
@@ -357,7 +357,7 @@ const FastAuthWallet: WalletBehaviourFactory<
       });
     },
 
-    async signAndSendDelegateActions({
+    async signAndSendTransactions({
       transactions,
       callbackUrl,
     }: {
