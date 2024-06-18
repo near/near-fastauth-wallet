@@ -520,7 +520,7 @@ export class FastAuthWalletConnection {
     });
   }
 
-  async requestSignMultiChain(data: SendMultichainMessage) {
+  async requestSignAndSendMultiChain(data: SendMultichainMessage) {
     return this._requestToIframe({
       evtTypes: {
         loaded: 'signMultiChainLoaded',
