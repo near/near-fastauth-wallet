@@ -82,8 +82,16 @@ interface FastAuthBrowserWallet extends BrowserWallet {
 
   getDerivedAddress(
     args:
-      | ({ type: 'EVM' } & FetchEVMAddressRequest)
-      | ({ type: 'BTC' } & BitcoinPublicKeyAndAddressRequest)
+      | (Omit<FetchEVMAddressRequest, 'path'> & {
+          path: Omit<FetchEVMAddressRequest['path'], 'chain'> & {
+            chain: 60;
+          };
+        })
+      | (Omit<BitcoinPublicKeyAndAddressRequest, 'path'> & {
+          path: Omit<BitcoinPublicKeyAndAddressRequest['path'], 'chain'> & {
+            chain: 0;
+          };
+        })
   ): Promise<string>;
 
   signMultiChainTransaction(data: SendMultichainMessage): Promise<void>;
@@ -412,10 +420,16 @@ export const FastAuthWallet: WalletBehaviourFactory<
     },
 
     async getDerivedAddress(args) {
-      if (args.type === 'EVM') {
+      console.log({ args });
+      if (args.path.chain === 60) {
         return await fetchDerivedEVMAddress(args);
-      } else if (args.type === 'BTC') {
-        return (await fetchDerivedBTCAddressAndPublicKey(args)).address;
+      } else if (args.path.chain === 0) {
+        return (
+          await fetchDerivedBTCAddressAndPublicKey(
+            // TypeScript can't infer this from the if clause above, so we need to provide a type assertion
+            args as BitcoinPublicKeyAndAddressRequest
+          )
+        ).address;
       } else {
         throw new Error('Unsupported chain type');
       }

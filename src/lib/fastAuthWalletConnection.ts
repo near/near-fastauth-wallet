@@ -17,8 +17,12 @@ import { loadIframeDialog } from '../ui/reactApp';
 import { SignedMessage, SignMessageParams } from '@near-wallet-selector/core';
 import { PublicKey } from 'near-api-js/lib/utils';
 import { sha256 } from 'js-sha256';
-import { BitcoinRequest, BTCNetworkIds, EVMRequest } from 'multichain-tools';
-import { KeyDerivationPath } from 'multichain-tools/src/kdf/types';
+import {
+  BitcoinRequest,
+  BTCNetworkIds,
+  EVMRequest,
+  KeyDerivationPath,
+} from 'multichain-tools';
 
 const LOGIN_PATH = '/login/';
 const CREATE_ACCOUNT_PATH = '/create-account/';
