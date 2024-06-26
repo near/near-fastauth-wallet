@@ -16,15 +16,17 @@ import * as nearAPI from 'near-api-js';
 
 import BN from 'bn.js';
 import {
-  NearNetworkIds,
-  ChainSignatureContracts,
-  BTCNetworkIds,
-  fetchDerivedBTCAddress,
+  FetchEVMAddressRequest,
+  BitcoinPublicKeyAndAddressRequest,
   fetchDerivedEVMAddress,
+  fetchDerivedBTCAddressAndPublicKey,
 } from 'multichain-tools';
 
 import icon from './fast-auth-icon';
-import { FastAuthWalletConnection } from './fastAuthWalletConnection';
+import {
+  FastAuthWalletConnection,
+  SendMultichainMessage,
+} from './fastAuthWalletConnection';
 
 export interface FastAuthWalletParams {
   walletUrl?: string;
@@ -46,21 +48,45 @@ interface FastAuthWalletState {
   near: any;
 }
 
-interface DerivedAddressParamEVM {
-  type: 'EVM';
-  signerId: string;
-  path: string;
-  networkId: NearNetworkIds;
-  contract: ChainSignatureContracts;
+// Should be maintained until these methods are added through NEP to the wallet interface
+interface FastAuthSignInParams {
+  email?: string;
+  accountId?: string;
+  isRecovery?: boolean;
 }
 
-interface DerivedAddressParamBTC {
-  type: 'BTC';
-  signerId: string;
-  path: string;
-  networkId: NearNetworkIds;
-  btcNetworkId: BTCNetworkIds;
-  contract: ChainSignatureContracts;
+type ExtendedSignIn = (
+  params: Parameters<BrowserWallet['signIn']>[0] & FastAuthSignInParams
+) => ReturnType<BrowserWallet['signIn']>;
+interface FastAuthBrowserWallet extends BrowserWallet {
+  signIn: ExtendedSignIn;
+
+  signAndSendDelegateAction(params: {
+    receiverId: string;
+    actions: Action[];
+  }): Promise<void>;
+
+  signAndSendDelegateActions(params: {
+    transactions: Optional<Transaction, 'signerId'>[];
+    callbackUrl?: string;
+  }): Promise<void>;
+
+  setRelayerUrl(params: { relayerUrl: string }): void;
+
+  resetRelayerUrl(): void;
+
+  verifySignMessage(
+    message: SignMessageParams,
+    signedMessage: SignedMessage
+  ): Promise<boolean>;
+
+  getDerivedAddress(
+    args:
+      | ({ type: 'EVM' } & FetchEVMAddressRequest)
+      | ({ type: 'BTC' } & BitcoinPublicKeyAndAddressRequest)
+  ): Promise<string>;
+
+  signMultiChainTransaction(data: SendMultichainMessage): Promise<void>;
 }
 
 const resolveWalletUrl = (network: Network, walletUrl?: string) => {
@@ -100,8 +126,8 @@ const setupWalletState = async (
   };
 };
 
-const FastAuthWallet: WalletBehaviourFactory<
-  BrowserWallet,
+export const FastAuthWallet: WalletBehaviourFactory<
+  FastAuthBrowserWallet,
   { params: FastAuthWalletExtraOptions }
 > = async ({ metadata, options, store, params, logger }) => {
   const _state = await setupWalletState(params, options.network);
@@ -297,7 +323,7 @@ const FastAuthWallet: WalletBehaviourFactory<
       email,
       accountId,
       isRecovery,
-    }: any) {
+    }) {
       const existingAccounts = await getAccounts();
 
       if (existingAccounts.length) {
@@ -345,70 +371,32 @@ const FastAuthWallet: WalletBehaviourFactory<
       });
     },
 
-    async signAndSendDelegateAction({
-      receiverId,
-      actions,
-    }: {
-      receiverId: string;
-      actions: Action[];
-    }): Promise<void> {
+    async signAndSendDelegateAction({ receiverId, actions }) {
       await _signAndSendWithRelayer({
         transactions: [{ receiverId, actions }],
       });
     },
 
-    async signAndSendDelegateActions({
-      transactions,
-      callbackUrl,
-    }: {
-      transactions: Optional<Transaction, 'signerId'>[];
-      callbackUrl?: string;
-    }): Promise<void> {
+    async signAndSendDelegateActions({ transactions, callbackUrl }) {
       await _signAndSendWithRelayer({
         transactions,
         callbackUrl,
       });
     },
 
-    async getDerivedAddress(
-      args: DerivedAddressParamEVM | DerivedAddressParamBTC
-    ) {
-      if (args.type === 'EVM') {
-        return await fetchDerivedEVMAddress(
-          args.signerId,
-          args.path,
-          args.networkId,
-          args.contract
-        );
-      } else if (args.type === 'BTC') {
-        const address = await fetchDerivedBTCAddress(
-          args.signerId,
-          args.path,
-          args.networkId,
-          args.btcNetworkId,
-          args.contract
-        );
-        return address;
-      } else {
-        throw new Error('Unsupported chain type');
-      }
-    },
-    async signMultiChainTransaction(data) {
-      await _state.wallet.requestSignMultiChain(data);
-    },
     setRelayerUrl({ relayerUrl: relayerUrlArg }) {
       relayerUrl = relayerUrlArg;
     },
+
     resetRelayerUrl() {
       relayerUrl = params.relayerUrl;
     },
+
     async signMessage(data) {
       return _state.wallet.requestSignMessage(data);
     },
-    async verifySignMessage(
-      message: SignMessageParams,
-      signedMessage: SignedMessage
-    ): Promise<boolean> {
+
+    async verifySignMessage(message, signedMessage) {
       const accessKeys = await _state.wallet.account().getAccessKeys();
       const isFullAccessKey = accessKeys.some(
         (key) =>
@@ -421,6 +409,20 @@ const FastAuthWallet: WalletBehaviourFactory<
       }
 
       return _state.wallet.verifySignMessage(message, signedMessage);
+    },
+
+    async getDerivedAddress(args) {
+      if (args.type === 'EVM') {
+        return await fetchDerivedEVMAddress(args);
+      } else if (args.type === 'BTC') {
+        return (await fetchDerivedBTCAddressAndPublicKey(args)).address;
+      } else {
+        throw new Error('Unsupported chain type');
+      }
+    },
+
+    async signMultiChainTransaction(data) {
+      await _state.wallet.requestSignMultiChain(data);
     },
   };
 };
