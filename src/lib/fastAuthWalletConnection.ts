@@ -78,7 +78,7 @@ type BTCSendMultichainMessage = BaseSendMultichainMessage & {
   network: 'mainnet' | 'testnet';
 };
 
-type SendMultichainMessage =
+export type SendMultichainMessage =
   | BTCSendMultichainMessage
   | EvmSendMultichainMessage;
 
@@ -520,7 +520,7 @@ export class FastAuthWalletConnection {
     });
   }
 
-  async requestSignMultiChain(data: SendMultichainMessage) {
+  async requestSignAndSendMultiChain(data: SendMultichainMessage) {
     return this._requestToIframe({
       evtTypes: {
         loaded: 'signMultiChainLoaded',
