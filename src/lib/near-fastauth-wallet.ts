@@ -420,7 +420,6 @@ export const FastAuthWallet: WalletBehaviourFactory<
     },
 
     async getDerivedAddress(args) {
-      console.log({ args });
       if (args.path.chain === 60) {
         return await fetchDerivedEVMAddress(args);
       } else if (args.path.chain === 0) {
