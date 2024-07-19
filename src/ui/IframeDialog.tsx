@@ -133,7 +133,6 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
         >
           {isIframeLoaded && (
             <CloseOutlined // Add close button
-              data-testid="close-button"
               style={{
                 cursor: 'pointer',
                 position: 'absolute',
