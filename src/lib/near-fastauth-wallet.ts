@@ -16,8 +16,8 @@ import * as nearAPI from 'near-api-js';
 
 import BN from 'bn.js';
 import {
-  FetchEVMAddressRequest,
-  BitcoinPublicKeyAndAddressRequest,
+  type FetchEVMAddressRequest,
+  type BitcoinPublicKeyAndAddressRequest,
   fetchDerivedEVMAddress,
   fetchDerivedBTCAddressAndPublicKey,
 } from 'multichain-tools';
@@ -25,7 +25,7 @@ import {
 import icon from './fast-auth-icon';
 import {
   FastAuthWalletConnection,
-  SendMultichainMessage,
+  type SendMultichainMessage,
 } from './fastAuthWalletConnection';
 
 export interface FastAuthWalletParams {
