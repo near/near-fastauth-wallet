@@ -4,7 +4,6 @@ import type {
   Near,
   WalletConnection,
 } from 'near-api-js';
-import * as nearAPI from 'near-api-js';
 import { KeyPair, utils } from 'near-api-js';
 import { ConnectedWalletAccount } from 'near-api-js';
 import { deserialize, serialize } from 'near-api-js/lib/utils/serialize';
@@ -18,6 +17,12 @@ import { loadIframeDialog } from '../ui/reactApp';
 import { SignedMessage, SignMessageParams } from '@near-wallet-selector/core';
 import { PublicKey } from 'near-api-js/lib/utils';
 import { sha256 } from 'js-sha256';
+import {
+  BitcoinRequest,
+  BTCNetworkIds,
+  EVMRequest,
+  KeyDerivationPath,
+} from 'multichain-tools';
 
 const LOGIN_PATH = '/login/';
 const CREATE_ACCOUNT_PATH = '/create-account/';
@@ -58,29 +63,24 @@ interface RequestSignTransactionsOptions {
   meta?: string;
 }
 
-interface BaseSendMultichainMessage {
-  chain: number;
-  domain?: string;
-  to: string;
-  value: bigint;
-  meta?: { [k: string]: any };
-  from: string;
-}
-
-type EvmSendMultichainMessage = BaseSendMultichainMessage & {
-  chainId: bigint;
-  maxFeePerGas?: bigint;
-  maxPriorityFeePerGas?: bigint;
-  gasLimit?: number;
-};
-
-type BTCSendMultichainMessage = BaseSendMultichainMessage & {
-  network: 'mainnet' | 'testnet';
-};
-
-type SendMultichainMessage =
-  | BTCSendMultichainMessage
-  | EvmSendMultichainMessage;
+// This type should be kept in sync with fast-auth-signer receiving message: https://github.com/near/fast-auth-signer/blob/8d2726f5fe007d7ae011dec245692ac7499aff0c/packages/near-fast-auth-signer/src/components/SignMultichain/types.ts#L1
+export type SendMultichainMessage =
+  | (Omit<
+      EVMRequest,
+      'nearAuthentication' | 'chainConfig' | 'derivationPath'
+    > & {
+      chainConfig?: Partial<EVMRequest['chainConfig']>;
+      derivationPath: Omit<KeyDerivationPath, 'chain'> & { chain: 60 };
+    })
+  | (Omit<
+      BitcoinRequest,
+      'nearAuthentication' | 'chainConfig' | 'derivationPath'
+    > & {
+      chainConfig: {
+        network: BTCNetworkIds;
+      } & Partial<Omit<BitcoinRequest['chainConfig'], 'network'>>;
+      derivationPath: Omit<KeyDerivationPath, 'chain'> & { chain: 0 };
+    });
 
 export class FastAuthWalletConnection {
   /** @hidden */
