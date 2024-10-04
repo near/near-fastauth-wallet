@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, forwardRef } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
-import { Modal } from './components/modal';
-import { Drawer } from './components/Drawer';
+import { Dialog } from './components/Dialog';
 export type IframeModalProps = {
   iframeSrc: string;
   isOpen: boolean;
@@ -97,31 +96,16 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
       );
     }
 
-    if (isMobile) {
-      return (
-        <Drawer
-          isOpen={isDialogOpen}
-          onClose={handleDialogClose}
-          dialogHeight={dialogHeight}
-          isHidden={isHidden}
-          isLoading={!isIframeLoaded}
-        >
-          {iframeElement}
-        </Drawer>
-      );
-    }
-
-    return (
-      <Modal
-        isOpen={isDialogOpen}
-        onClose={handleDialogClose}
-        dialogHeight={dialogHeight}
-        isHidden={isHidden}
-        isLoading={!isIframeLoaded}
-      >
-        {iframeElement}
-      </Modal>
-    );
+    return <Dialog
+      isOpen={isDialogOpen}
+      onClose={handleDialogClose}
+      dialogHeight={dialogHeight}
+      isHidden={isHidden}
+      isLoading={!isIframeLoaded}
+      isMobile={isMobile}
+    >
+      {iframeElement}
+    </Dialog>
   }
 );
 
