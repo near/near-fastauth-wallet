@@ -10,12 +10,10 @@
     "watch": "nodemon"
   },
   "dependencies": {
-    "@ant-design/icons": "^5.3.6",
     "@near-js/transactions": "^0.2.1",
     "@near-wallet-selector/core": "^8.5.2",
     "@near-wallet-selector/wallet-utils": "^8.5.2",
     "@vitejs/plugin-react": "^4.2.1",
-    "antd": "^5.12.8",
     "class-variance-authority": "^0.7.0",
     "js-sha256": "^0.11.0",
     "multichain-tools": "2.0.14-beta.10",

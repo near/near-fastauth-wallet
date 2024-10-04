@@ -1,12 +1,8 @@
 import React, { useState, useEffect, useRef, forwardRef } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
-import { Modal, Drawer, Spin, Flex } from 'antd';
-import { CloseOutlined, LoadingOutlined } from '@ant-design/icons';
-
-const boxStyle: React.CSSProperties = {
-  width: '100%',
-  height: '100%',
-};
+import { Modal } from './components/modal';
+import { Drawer } from './components/Drawer';
+import { CloseOutlined } from '@ant-design/icons';
 
 export type IframeModalProps = {
   iframeSrc: string;
@@ -69,86 +65,47 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
     };
 
     const iframeElement = (
-      <>
-        {!isIframeLoaded && (
-          <Flex style={boxStyle} justify="center" align="center">
-            <Spin
-              indicator={
-                <LoadingOutlined style={{ fontSize: 55, color: '#fff' }} spin />
-              }
-            />
-          </Flex>
-        )}
-        <iframe
-          ref={ref}
-          id="nfw-connect-iframe"
-          title="Iframe Content"
-          src={iframeSrc}
-          width="100%"
-          height="100%" // Set your desired height
-          allowFullScreen
-          allow="publickey-credentials-get *; clipboard-write"
-          style={{ borderRadius: '12px' }}
-          onLoad={() => {
-            setIsIframeLoaded(true);
-          }}
-        />
-      </>
+      <iframe
+        ref={ref}
+        id="nfw-connect-iframe"
+        title="Iframe Content"
+        src={iframeSrc}
+        width="100%"
+        height="100%" // Set your desired height
+        allowFullScreen
+        allow="publickey-credentials-get *; clipboard-write"
+        style={{ borderRadius: '12px' }}
+        onLoad={() => {
+          setIsIframeLoaded(true);
+        }}
+      />
     );
 
-    if (!isModal) {
-      return iframeElement;
+    if (!isModal && isDialogOpen) {
+      return (
+        <div id="nfw-connect-iframe-container" style={{
+          width: '100%',
+          height: '100%',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0
+        }}>
+
+          {iframeElement}
+        </div>
+      );
     }
 
     if (isMobile) {
       return (
         <Drawer
-          placement="bottom"
-          width="auto"
+          isOpen={isDialogOpen}
           onClose={handleDialogClose}
-          open={isDialogOpen}
-          contentWrapperStyle={{ height: 'unset' }}
-          zIndex={10000}
-          destroyOnClose
-          closeIcon={isIframeLoaded}
-          maskClosable={false}
-          styles={{
-            header: {
-              display: 'none',
-            },
-            content: {
-              padding: 0,
-              borderTopRightRadius: '12px',
-              borderTopLeftRadius: '12px',
-              height: dialogHeight,
-              maxHeight: '80vh',
-              ...(isHidden ? { display: 'none' } : {}),
-            },
-            body: {
-              width: '100%',
-              padding: 0,
-              overflow: 'hidden',
-              position: 'relative',
-              ...(isHidden ? { display: 'none' } : {}),
-            },
-            ...(isHidden ? { mask: { display: 'none' } } : {}),
-          }}
+          dialogHeight={dialogHeight}
+          isHidden={isHidden}
         >
-          {isIframeLoaded && (
-            <CloseOutlined // Add close button
-              style={{
-                cursor: 'pointer',
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                width: '16px',
-                height: '16px',
-                color: '#706F6C',
-              }}
-              onClick={handleDialogClose}
-            />
-          )}
-
           {iframeElement}
         </Drawer>
       );
@@ -156,29 +113,10 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
 
     return (
       <Modal
-        centered
-        open={isDialogOpen}
-        onOk={() => setIsDialogOpen(false)}
-        onCancel={handleDialogClose}
-        footer={null}
-        width="auto"
-        zIndex={10000}
-        closeIcon={isIframeLoaded}
-        maskClosable={false}
-        destroyOnClose
-        styles={{
-          content: {
-            padding: 0,
-            ...(isHidden ? { display: 'none' } : {}),
-          },
-          body: {
-            height: dialogHeight,
-            width: '375px',
-            borderRadius: '12px',
-            ...(isHidden ? { display: 'none' } : {}),
-          },
-          ...(isHidden ? { mask: { display: 'none' } } : {}),
-        }}
+        isOpen={isDialogOpen}
+        onClose={handleDialogClose}
+        dialogHeight={dialogHeight}
+        isHidden={isHidden}
       >
         {iframeElement}
       </Modal>
