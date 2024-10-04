@@ -1,7 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { CloseIcon } from './CloseIcon';
 import { Overlay } from './Overlay';
+import { usePortal } from '../hooks/usePortal';
+import { useOnClickOutside } from '../hooks/useOnClickOutside';
+import { Spinner } from './Spinner';
 
 interface DrawerProps {
   isOpen: boolean;
@@ -9,40 +12,23 @@ interface DrawerProps {
   children: React.ReactNode;
   isHidden?: boolean;
   dialogHeight?: string;
+  isLoading?: boolean;
 }
 
-export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, children, isHidden = false, dialogHeight = '375px' }) => {
-  const [drawerRoot, setDrawerRoot] = useState<HTMLElement | null>(null);
+export const Drawer: React.FC<DrawerProps> = ({
+  isOpen,
+  onClose,
+  children,
+  isHidden = false,
+  dialogHeight = '375px',
+  isLoading = false
+}) => {
+  const portalRoot = usePortal();
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const root = document.createElement('div');
-    root.id = 'drawer-root';
-    document.body.appendChild(root);
-    setDrawerRoot(root);
+  useOnClickOutside(drawerRef, onClose);
 
-    return () => {
-      document.body.removeChild(root);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (drawerRef.current && !drawerRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen || !drawerRoot) return null;
+  if (!isOpen || !portalRoot) return null;
 
   const drawerContent = (
     <div
@@ -71,8 +57,17 @@ export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, children, isHid
 
   return ReactDOM.createPortal(
     <Overlay isOpen={isOpen} onClose={onClose}>
+      {isLoading && <Spinner
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 10001
+        }}
+      />}
       {drawerContent}
     </Overlay>,
-    drawerRoot
+    portalRoot
   );
 };

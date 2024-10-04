@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useRef, forwardRef } from 'react';
+import { useState, useEffect, useRef, forwardRef } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
 import { Modal } from './components/modal';
 import { Drawer } from './components/Drawer';
-import { CloseOutlined } from '@ant-design/icons';
-
 export type IframeModalProps = {
   iframeSrc: string;
-  isOpen?: boolean;
+  isOpen: boolean;
   isModal?: boolean;
 };
 
@@ -65,21 +63,23 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
     };
 
     const iframeElement = (
-      <iframe
-        ref={ref}
-        id="nfw-connect-iframe"
-        title="Iframe Content"
-        src={iframeSrc}
-        width="100%"
-        height="100%" // Set your desired height
-        allowFullScreen
-        allow="publickey-credentials-get *; clipboard-write"
-        style={{ borderRadius: '12px' }}
-        onLoad={() => {
-          setIsIframeLoaded(true);
-        }}
-      />
-    );
+      <>
+        <iframe
+          ref={ref}
+          id="nfw-connect-iframe"
+          title="Iframe Content"
+          src={iframeSrc}
+          width="100%"
+          height="100%" // Set your desired height
+          allowFullScreen
+          allow="publickey-credentials-get *; clipboard-write"
+          onLoad={() => {
+            setIsIframeLoaded(true);
+          }}
+        />
+      </>
+    )
+
 
     if (!isModal && isDialogOpen) {
       return (
@@ -92,7 +92,6 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
           right: 0,
           bottom: 0
         }}>
-
           {iframeElement}
         </div>
       );
@@ -105,6 +104,7 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
           onClose={handleDialogClose}
           dialogHeight={dialogHeight}
           isHidden={isHidden}
+          isLoading={!isIframeLoaded}
         >
           {iframeElement}
         </Drawer>
@@ -117,6 +117,7 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
         onClose={handleDialogClose}
         dialogHeight={dialogHeight}
         isHidden={isHidden}
+        isLoading={!isIframeLoaded}
       >
         {iframeElement}
       </Modal>

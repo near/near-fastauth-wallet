@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useMediaQuery } from 'usehooks-ts';
 import { CloseIcon } from './CloseIcon';
 import { Overlay } from './Overlay';
+import { usePortal } from '../hooks/usePortal';
+import { useOnClickOutside } from '../hooks/useOnClickOutside';
+import { Spinner } from './Spinner';
 
 interface ModalProps {
   isOpen: boolean;
@@ -10,41 +13,24 @@ interface ModalProps {
   children: React.ReactNode;
   dialogHeight?: string;
   isHidden?: boolean;
+  isLoading?: boolean;
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, dialogHeight = '500px', isHidden = false }) => {
+export const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  children,
+  dialogHeight = '500px',
+  isHidden = false,
+  isLoading = false
+}) => {
   const isMobile = useMediaQuery('(max-width: 767px)');
-  const [modalRoot, setModalRoot] = useState<HTMLElement | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const portalRoot = usePortal();
 
-  useEffect(() => {
-    const root = document.createElement('div');
-    root.id = 'modal-root';
-    document.body.appendChild(root);
-    setModalRoot(root);
+  useOnClickOutside(modalRef, onClose);
 
-    return () => {
-      document.body.removeChild(root);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen || !modalRoot) return null;
+  if (!isOpen || !portalRoot) return null;
 
   const modalContent = (
     <div
@@ -75,8 +61,17 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, dialogH
 
   return ReactDOM.createPortal(
     <Overlay isOpen={isOpen} onClose={onClose}>
+      {isLoading && <Spinner
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 10001
+        }}
+      />}
       {modalContent}
     </Overlay>,
-    modalRoot
+    portalRoot
   );
 };
