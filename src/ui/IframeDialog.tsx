@@ -11,7 +11,7 @@ const boxStyle: React.CSSProperties = {
 export type IframeModalProps = {
   iframeSrc: string;
   isOpen?: boolean;
-  onLoad?: React.EventHandler<React.SyntheticEvent>;
+  isModal?: boolean;
 };
 
 type MessageEventData = {
@@ -23,7 +23,7 @@ type MessageEventData = {
 };
 
 export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
-  ({ iframeSrc, isOpen, onLoad }, ref) => {
+  ({ iframeSrc, isOpen, isModal }, ref) => {
     const isMobile = useMediaQuery('(max-width: 767px)');
     const onCloseRef = useRef(null);
 
@@ -89,13 +89,16 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
           allowFullScreen
           allow="publickey-credentials-get *; clipboard-write"
           style={{ borderRadius: '12px' }}
-          onLoad={(e) => {
+          onLoad={() => {
             setIsIframeLoaded(true);
-            onLoad(e);
           }}
         />
       </>
     );
+
+    if (!isModal) {
+      return iframeElement;
+    }
 
     if (isMobile) {
       return (

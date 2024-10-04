@@ -13,7 +13,7 @@ import {
   SignedDelegate,
   SignedTransaction,
 } from '@near-js/transactions';
-import { loadIframeDialog } from '../ui/reactApp';
+import { renderIFrame } from '../ui/reactApp';
 import { SignedMessage, SignMessageParams } from '@near-wallet-selector/core';
 import { PublicKey } from 'near-api-js/lib/utils';
 import { sha256 } from 'js-sha256';
@@ -108,7 +108,12 @@ export class FastAuthWalletConnection {
   /** @hidden */
   _completeSignInPromise: Promise<void>;
 
-  constructor(near: Near, appKeyPrefix: string) {
+  /** @hidden */
+  isModal: boolean;
+  
+  constructor(near: Near, appKeyPrefix: string, config: {
+    isModal: boolean;
+  }) {
     if (typeof appKeyPrefix !== 'string') {
       throw new Error(
         'Please define a clear appKeyPrefix for this WalletConnection instance as the second argument to the constructor'
@@ -153,6 +158,7 @@ export class FastAuthWalletConnection {
     if (!this.isSignedIn()) {
       this._completeSignInPromise = this._completeSignInWithAccessKey();
     }
+    this.isModal = config.isModal;
   }
 
   /**
@@ -261,7 +267,7 @@ export class FastAuthWalletConnection {
       newUrl.searchParams.append('isRecovery', isRecovery + '');
     }
 
-    loadIframeDialog(newUrl.toString());
+    this.renderWallet(newUrl.toString());
 
     const {
       publicKey,
@@ -391,7 +397,8 @@ export class FastAuthWalletConnection {
       callbackUrl,
       type,
     });
-    loadIframeDialog(newUrl.toString());
+
+    this.renderWallet(newUrl.toString());
 
     return new Promise((resolve) => {
       let eventType: SignMessageEventType;
@@ -496,7 +503,7 @@ export class FastAuthWalletConnection {
             type: evtTypes.request,
             data,
           },
-          {
+          { 
             targetOrigin: '*',
           }
         );
@@ -506,7 +513,8 @@ export class FastAuthWalletConnection {
     window.addEventListener('message', listener);
 
     const newUrl = new URL(this._walletBaseUrl + urlPath);
-    await loadIframeDialog(newUrl.toString());
+    
+    this.renderWallet(newUrl.toString());
 
     return new Promise((resolve) => {
       const listener = (event: MessageEvent): void => {
@@ -615,5 +623,12 @@ export class FastAuthWalletConnection {
     );
 
     return keyPair.verify(messageHashBytes, signatureBytes);
+  }
+
+  renderWallet(url: string) {
+    renderIFrame({
+      iframeSrc: url,
+      isModal: this.isModal,
+    });
   }
 }

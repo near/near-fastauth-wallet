@@ -35,11 +35,13 @@ export interface FastAuthWalletParams {
   successUrl?: string;
   failureUrl?: string;
   relayerUrl?: string;
+  isModal?: boolean;
 }
 
 interface FastAuthWalletExtraOptions {
   walletUrl: string;
   relayerUrl: string;
+  isModal: boolean
 }
 
 interface FastAuthWalletState {
@@ -125,7 +127,7 @@ const setupWalletState = async (
     headers: {},
   });
 
-  const wallet = new FastAuthWalletConnection(near, 'near_app');
+  const wallet = new FastAuthWalletConnection(near, 'near_app', { isModal: params.isModal });
 
   return {
     wallet,
@@ -447,6 +449,7 @@ export function setupFastAuthWallet({
   successUrl = '',
   failureUrl = '',
   relayerUrl = '',
+  isModal = true,
 }: FastAuthWalletParams = {}): WalletModuleFactory<BrowserWallet> {
   return async (moduleOptions) => {
     return {
@@ -468,6 +471,7 @@ export function setupFastAuthWallet({
           params: {
             walletUrl: resolveWalletUrl(options.options.network, walletUrl),
             relayerUrl,
+            isModal
           },
         });
       },
