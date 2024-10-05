@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, forwardRef } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
 import { Dialog } from './components/Dialog';
+
 export type IframeModalProps = {
   iframeSrc: string;
   isOpen: boolean;
@@ -62,50 +63,38 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
     };
 
     const iframeElement = (
-      <>
-        <iframe
-          ref={ref}
-          id="nfw-connect-iframe"
-          title="Iframe Content"
-          src={iframeSrc}
-          width="100%"
-          height="100%" // Set your desired height
-          allowFullScreen
-          allow="publickey-credentials-get *; clipboard-write"
-          onLoad={() => {
-            setIsIframeLoaded(true);
-          }}
-        />
-      </>
+      <iframe
+        ref={ref}
+        id="nfw-connect-iframe"
+        title="Iframe Content"
+        src={iframeSrc}
+        className="iframe"
+        allowFullScreen
+        allow="publickey-credentials-get *; clipboard-write"
+        onLoad={() => {
+          setIsIframeLoaded(true);
+        }}
+      />
     )
-
 
     if (!isModal && isDialogOpen) {
       return (
-        <div id="nfw-connect-iframe-container" style={{
-          width: '100%',
-          height: '100%',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0
-        }}>
+        <div id="nfw-connect-iframe-container" className="iframe-container">
           {iframeElement}
         </div>
       );
+    } else {
+      return <Dialog
+        isOpen={isDialogOpen}
+        onClose={handleDialogClose}
+        dialogHeight={dialogHeight}
+        isHidden={isHidden}
+        isLoading={!isIframeLoaded}
+        isMobile={isMobile}
+      >
+        {iframeElement}
+      </Dialog>
     }
-
-    return <Dialog
-      isOpen={isDialogOpen}
-      onClose={handleDialogClose}
-      dialogHeight={dialogHeight}
-      isHidden={isHidden}
-      isLoading={!isIframeLoaded}
-      isMobile={isMobile}
-    >
-      {iframeElement}
-    </Dialog>
   }
 );
 

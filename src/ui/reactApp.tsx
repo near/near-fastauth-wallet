@@ -1,5 +1,6 @@
 import ReactDOM from 'react-dom/client';
 import IframeDialog from './IframeDialog';
+import './styles.css';
 
 export const renderIFrame = ({
   iframeSrc,
@@ -18,9 +19,9 @@ export const renderIFrame = ({
 
   ReactDOM.createRoot(rootElement).render(
     <IframeDialog
-        isOpen
-        iframeSrc={iframeSrc}
-        isModal={isModal}
-      />
+      isOpen
+      iframeSrc={iframeSrc}
+      isModal={isModal}
+    />
   );
 };

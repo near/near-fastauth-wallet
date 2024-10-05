@@ -35,54 +35,28 @@ export const Dialog: React.FC<DialogProps> = ({
   const dialogContent = (
     <div
       ref={dialogRef}
+      className={`dialog ${isMobile ? 'dialog-mobile' : 'dialog-desktop'}`}
       style={{
         display: isHidden ? 'none' : 'block',
-        position: 'fixed',
-        backgroundColor: 'white',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-        zIndex: 10001,
-        ...(isMobile
-          ? {
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: dialogHeight,
-            borderTopRightRadius: '12px',
-            borderTopLeftRadius: '12px',
-            transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
-            transition: 'transform 0.3s ease-in-out',
-          }
-          : {
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '375px',
-            maxWidth: '100%',
-            height: dialogHeight,
-            maxHeight: 'none',
-            borderRadius: '12px',
-          }),
-        overflow: 'auto',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
+        height: dialogHeight,
+        transform: isMobile && isOpen ? 'translateY(0)' : undefined,
       }}
     >
-      <CloseIcon onClick={onClose} />
+      <CloseIcon
+        onClick={onClose}
+      />
       {children}
     </div>
   );
 
   return ReactDOM.createPortal(
-    <Overlay isOpen={isOpen} onClose={onClose}>
-      {isLoading && <Spinner
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 10001
-        }}
-      />}
+    <Overlay
+      isOpen={isOpen}
+      onClose={onClose}
+    >
+      {isLoading && (
+        <Spinner className="spinner" />
+      )}
       {dialogContent}
     </Overlay>,
     portalRoot

@@ -1,0 +1,106 @@
+/* Dialog styles */
+.dialog {
+  display: block;
+  position: fixed;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dialog::-webkit-scrollbar {
+  display: none;
+}
+
+.dialog-mobile {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-top-right-radius: 12px;
+  border-top-left-radius: 12px;
+  transform: translateY(0);
+  transition: transform 0.3s ease-in-out;
+}
+
+.dialog-desktop {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 375px;
+  max-width: 100%;
+  max-height: none;
+  border-radius: 12px;
+}
+
+/* CloseIcon styles */
+.close-icon {
+  cursor: pointer;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.close-icon path {
+  fill: #706F6C;
+}
+
+/* Overlay styles */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* IframeDialog styles */
+.iframe-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Spinner styles */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
