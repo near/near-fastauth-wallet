@@ -1,17 +1,12 @@
-import React, { useState, useEffect, useRef, forwardRef } from 'react';
+import { useState, useEffect, useRef, forwardRef } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
-import { Modal, Drawer, Spin, Flex } from 'antd';
-import { CloseOutlined, LoadingOutlined } from '@ant-design/icons';
-
-const boxStyle: React.CSSProperties = {
-  width: '100%',
-  height: '100%',
-};
+import { Dialog } from './components/Dialog';
+import CloseIcon from './components/CloseIcon';
 
 export type IframeModalProps = {
   iframeSrc: string;
-  isOpen?: boolean;
-  onLoad?: React.EventHandler<React.SyntheticEvent>;
+  isOpen: boolean;
+  isModal?: boolean;
 };
 
 type MessageEventData = {
@@ -23,7 +18,7 @@ type MessageEventData = {
 };
 
 export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
-  ({ iframeSrc, isOpen, onLoad }, ref) => {
+  ({ iframeSrc, isOpen, isModal }, ref) => {
     const isMobile = useMediaQuery('(max-width: 767px)');
     const onCloseRef = useRef(null);
 
@@ -69,117 +64,39 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
     };
 
     const iframeElement = (
-      <>
-        {!isIframeLoaded && (
-          <Flex style={boxStyle} justify="center" align="center">
-            <Spin
-              indicator={
-                <LoadingOutlined style={{ fontSize: 55, color: '#fff' }} spin />
-              }
-            />
-          </Flex>
-        )}
-        <iframe
-          ref={ref}
-          id="nfw-connect-iframe"
-          title="Iframe Content"
-          src={iframeSrc}
-          width="100%"
-          height="100%" // Set your desired height
-          allowFullScreen
-          allow="publickey-credentials-get *; clipboard-write"
-          style={{ borderRadius: '12px' }}
-          onLoad={(e) => {
-            setIsIframeLoaded(true);
-            onLoad(e);
-          }}
-        />
-      </>
-    );
-
-    if (isMobile) {
-      return (
-        <Drawer
-          placement="bottom"
-          width="auto"
-          onClose={handleDialogClose}
-          open={isDialogOpen}
-          contentWrapperStyle={{ height: 'unset' }}
-          zIndex={10000}
-          destroyOnClose
-          closeIcon={isIframeLoaded}
-          maskClosable={false}
-          styles={{
-            header: {
-              display: 'none',
-            },
-            content: {
-              padding: 0,
-              borderTopRightRadius: '12px',
-              borderTopLeftRadius: '12px',
-              height: dialogHeight,
-              maxHeight: '80vh',
-              ...(isHidden ? { display: 'none' } : {}),
-            },
-            body: {
-              width: '100%',
-              padding: 0,
-              overflow: 'hidden',
-              position: 'relative',
-              ...(isHidden ? { display: 'none' } : {}),
-            },
-            ...(isHidden ? { mask: { display: 'none' } } : {}),
-          }}
-        >
-          {isIframeLoaded && (
-            <CloseOutlined // Add close button
-              style={{
-                cursor: 'pointer',
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                width: '16px',
-                height: '16px',
-                color: '#706F6C',
-              }}
-              onClick={handleDialogClose}
-            />
-          )}
-
-          {iframeElement}
-        </Drawer>
-      );
-    }
-
-    return (
-      <Modal
-        centered
-        open={isDialogOpen}
-        onOk={() => setIsDialogOpen(false)}
-        onCancel={handleDialogClose}
-        footer={null}
-        width="auto"
-        zIndex={10000}
-        closeIcon={isIframeLoaded}
-        maskClosable={false}
-        destroyOnClose
-        styles={{
-          content: {
-            padding: 0,
-            ...(isHidden ? { display: 'none' } : {}),
-          },
-          body: {
-            height: dialogHeight,
-            width: '375px',
-            borderRadius: '12px',
-            ...(isHidden ? { display: 'none' } : {}),
-          },
-          ...(isHidden ? { mask: { display: 'none' } } : {}),
+      <iframe
+        ref={ref}
+        id="nfw-connect-iframe"
+        title="Iframe Content"
+        src={iframeSrc}
+        className="nfw-iframe"
+        allowFullScreen
+        allow="publickey-credentials-get *; clipboard-write"
+        onLoad={() => {
+          setIsIframeLoaded(true);
         }}
+      />
+    )
+
+    if (!isModal) {
+      return isDialogOpen ? (
+        <div id="nfw-connect-iframe-container" className="nfw-iframe-container">
+          <CloseIcon onClick={handleDialogClose} />
+          {iframeElement}
+        </div>
+      ) : null;
+    } else {
+      return <Dialog
+        isOpen={isDialogOpen}
+        onClose={handleDialogClose}
+        dialogHeight={dialogHeight}
+        isHidden={isHidden}
+        isLoading={!isIframeLoaded}
+        isMobile={isMobile}
       >
         {iframeElement}
-      </Modal>
-    );
+      </Dialog>
+    }
   }
 );
 
