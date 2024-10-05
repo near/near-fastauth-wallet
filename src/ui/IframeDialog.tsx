@@ -77,12 +77,12 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
       />
     )
 
-    if (!isModal && isDialogOpen) {
-      return (
+    if (!isModal) {
+      return isDialogOpen ? (
         <div id="nfw-connect-iframe-container" className="iframe-container">
           {iframeElement}
         </div>
-      );
+      ) : null;
     } else {
       return <Dialog
         isOpen={isDialogOpen}

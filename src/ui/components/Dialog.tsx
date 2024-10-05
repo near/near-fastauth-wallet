@@ -32,23 +32,6 @@ export const Dialog: React.FC<DialogProps> = ({
 
   if (!isOpen || !portalRoot) return null;
 
-  const dialogContent = (
-    <div
-      ref={dialogRef}
-      className={`dialog ${isMobile ? 'dialog-mobile' : 'dialog-desktop'}`}
-      style={{
-        display: isHidden ? 'none' : 'block',
-        height: dialogHeight,
-        transform: isMobile && isOpen ? 'translateY(0)' : undefined,
-      }}
-    >
-      <CloseIcon
-        onClick={onClose}
-      />
-      {children}
-    </div>
-  );
-
   return ReactDOM.createPortal(
     <Overlay
       isOpen={isOpen}
@@ -57,7 +40,20 @@ export const Dialog: React.FC<DialogProps> = ({
       {isLoading && (
         <Spinner className="spinner" />
       )}
-      {dialogContent}
+      <div
+        ref={dialogRef}
+        className={`dialog ${isMobile ? 'dialog-mobile' : 'dialog-desktop'}`}
+        style={{
+          display: isHidden ? 'none' : 'block',
+          height: dialogHeight,
+          transform: isMobile && isOpen ? 'translateY(0)' : undefined,
+        }}
+      >
+        <CloseIcon
+          onClick={onClose}
+        />
+        {children}
+      </div>
     </Overlay>,
     portalRoot
   );
