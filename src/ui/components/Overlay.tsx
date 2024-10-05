@@ -13,7 +13,7 @@ export const Overlay: React.FC<OverlayProps> = ({ isOpen, onClose, children, ...
   const overlayContent = (
     <div
       {...props}
-      className={`overlay ${props.className || ''}`}
+      className={`nfw-overlay ${props.className || ''}`}
       onClick={onClose}
     >
       <div onClick={(e) => e.stopPropagation()}>

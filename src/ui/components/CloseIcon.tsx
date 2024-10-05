@@ -6,7 +6,7 @@ export const CloseIcon: React.FC<CloseIconProps> = (props) => {
   return (
     <button
       {...props}
-      className="close-icon"
+      className="nfw-close-icon"
     >
       <svg
         width="16"

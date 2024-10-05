@@ -1,5 +1,5 @@
 /* Dialog styles */
-.dialog {
+.nfw-dialog {
   display: block;
   position: fixed;
   background-color: white;
@@ -10,11 +10,11 @@
   -ms-overflow-style: none;
 }
 
-.dialog::-webkit-scrollbar {
+.nfw-dialog::-webkit-scrollbar {
   display: none;
 }
 
-.dialog-mobile {
+.nfw-dialog-mobile {
   left: 0;
   right: 0;
   bottom: 0;
@@ -24,7 +24,7 @@
   transition: transform 0.3s ease-in-out;
 }
 
-.dialog-desktop {
+.nfw-dialog-desktop {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -35,7 +35,7 @@
 }
 
 /* CloseIcon styles */
-.close-icon {
+.nfw-close-icon {
   cursor: pointer;
   position: absolute;
   top: 16px;
@@ -50,17 +50,17 @@
   justify-content: center;
 }
 
-.close-icon svg {
+.nfw-close-icon svg {
   width: 16px;
   height: 16px;
 }
 
-.close-icon path {
+.nfw-close-icon path {
   fill: #706F6C;
 }
 
 /* Overlay styles */
-.overlay {
+.nfw-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -74,7 +74,7 @@
 }
 
 /* IframeDialog styles */
-.iframe-container {
+.nfw-iframe-container {
   width: 100%;
   height: 100%;
   position: absolute;
@@ -84,7 +84,7 @@
   bottom: 0;
 }
 
-.iframe {
+.nfw-iframe {
   width: 100%;
   height: 100%;
   border: none;
@@ -96,7 +96,7 @@
   100% { transform: rotate(360deg); }
 }
 
-.spinner {
+.nfw-spinner {
   animation: spin 1s linear infinite;
   position: absolute;
   top: 50%;

@@ -9,7 +9,7 @@ export const Spinner: React.FC<SpinnerProps> = ({ size = 24, color = '#fff', ...
   return (
     <svg
       {...props}
-      className={`spinner ${props.className || ''}`}
+      className={`nfw-spinner ${props.className || ''}`}
       width={size}
       height={size}
       viewBox="0 0 24 24"
@@ -18,11 +18,11 @@ export const Spinner: React.FC<SpinnerProps> = ({ size = 24, color = '#fff', ...
       <circle
         cx="12"
         cy="12"
-        r="10"
+        r="11"
         stroke={color}
-        strokeWidth="4"
+        strokeWidth="3"
         fill="none"
-        strokeDasharray="31.4 31.4"
+        strokeDasharray="34.55751918948772 34.55751918948772"
         strokeLinecap="round"
       />
     </svg>

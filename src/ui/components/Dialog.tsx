@@ -38,11 +38,11 @@ export const Dialog: React.FC<DialogProps> = ({
       onClose={onClose}
     >
       {isLoading && (
-        <Spinner className="spinner" />
+        <Spinner />
       )}
       <div
         ref={dialogRef}
-        className={`dialog ${isMobile ? 'dialog-mobile' : 'dialog-desktop'}`}
+        className={`nfw-dialog ${isMobile ? 'nfw-dialog-mobile' : 'nfw-dialog-desktop'}`}
         style={{
           display: isHidden ? 'none' : 'block',
           height: dialogHeight,

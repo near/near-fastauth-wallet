@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, forwardRef } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
 import { Dialog } from './components/Dialog';
+import CloseIcon from './components/CloseIcon';
 
 export type IframeModalProps = {
   iframeSrc: string;
@@ -68,7 +69,7 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
         id="nfw-connect-iframe"
         title="Iframe Content"
         src={iframeSrc}
-        className="iframe"
+        className="nfw-iframe"
         allowFullScreen
         allow="publickey-credentials-get *; clipboard-write"
         onLoad={() => {
@@ -79,7 +80,8 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
 
     if (!isModal) {
       return isDialogOpen ? (
-        <div id="nfw-connect-iframe-container" className="iframe-container">
+        <div id="nfw-connect-iframe-container" className="nfw-iframe-container">
+          <CloseIcon onClick={handleDialogClose} />
           {iframeElement}
         </div>
       ) : null;
