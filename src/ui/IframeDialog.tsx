@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, forwardRef } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
-import { Dialog } from './components/Dialog';
+import { Dialog2 } from './components/Dialog';
 import CloseIcon from './components/CloseIcon';
 
 export type IframeModalProps = {
@@ -86,16 +86,16 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
         </div>
       ) : null;
     } else {
-      return <Dialog
+      return <Dialog2
         isOpen={isDialogOpen}
         onClose={handleDialogClose}
-        dialogHeight={dialogHeight}
-        isHidden={isHidden}
-        isLoading={!isIframeLoaded}
-        isMobile={isMobile}
+      // dialogHeight={dialogHeight}
+      // isHidden={isHidden}
+      // isLoading={!isIframeLoaded}
+      // isMobile={isMobile}
       >
         {iframeElement}
-      </Dialog>
+      </Dialog2>
     }
   }
 );

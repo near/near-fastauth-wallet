@@ -1,60 +1,72 @@
-import React, { useRef } from 'react';
-import ReactDOM from 'react-dom';
-import { CloseIcon } from './CloseIcon';
-import { Overlay } from './Overlay';
-import { usePortal } from '../hooks/usePortal';
-import { useOnClickOutside } from '../hooks/useOnClickOutside';
-import { Spinner } from './Spinner';
+import * as React from "react"
+
+import { useMediaQuery } from 'usehooks-ts';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../../../components/ui/dialog"
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "../../../components/ui/drawer"
 
 interface DialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-  dialogHeight?: string;
-  isHidden?: boolean;
-  isLoading?: boolean;
-  isMobile: boolean;
+  isOpen: boolean
+  onClose: () => void
+  children: React.ReactNode
 }
 
-export const Dialog: React.FC<DialogProps> = ({
-  isOpen,
-  onClose,
-  children,
-  dialogHeight = '500px',
-  isHidden = false,
-  isLoading = false,
-  isMobile
-}) => {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const portalRoot = usePortal();
+export function Dialog2({ isOpen, onClose, children }: DialogProps) {
+  const isDesktop = useMediaQuery("(min-width: 768px)")
 
-  useOnClickOutside(dialogRef, onClose);
+  if (isDesktop) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogTrigger asChild>
+          <button>Edit Profile</button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit profile</DialogTitle>
+            <DialogDescription>
+              Make changes to your profile here. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          {children}
+        </DialogContent>
+      </Dialog>
+    )
+  }
 
-  if (!isOpen || !portalRoot) return null;
-
-  return ReactDOM.createPortal(
-    <Overlay
-      isOpen={isOpen}
-      onClose={onClose}
-    >
-      {isLoading && (
-        <Spinner />
-      )}
-      <div
-        ref={dialogRef}
-        className={`nfw-dialog ${isMobile ? 'nfw-dialog-mobile' : 'nfw-dialog-desktop'}`}
-        style={{
-          display: isHidden ? 'none' : 'block',
-          height: dialogHeight,
-          transform: isMobile && isOpen ? 'translateY(0)' : undefined,
-        }}
-      >
-        <CloseIcon
-          onClick={onClose}
-        />
+  return (
+    <Drawer open={isOpen} onOpenChange={onClose}>
+      <DrawerTrigger asChild>
+        <button>Edit Profile</button>
+      </DrawerTrigger>
+      <DrawerContent>
+        <DrawerHeader className="text-left">
+          <DrawerTitle>Edit profile</DrawerTitle>
+          <DrawerDescription>
+            Make changes to your profile here. Click save when you're done.
+          </DrawerDescription>
+        </DrawerHeader>
         {children}
-      </div>
-    </Overlay>,
-    portalRoot
-  );
-};
+        <DrawerFooter className="pt-2">
+          <DrawerClose asChild>
+            <button>Cancel</button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  )
+}
