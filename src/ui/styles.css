@@ -101,42 +101,6 @@
 }
 
 
-/* Dialog styles */
-.nfw-dialog {
-  display: block;
-  position: fixed;
-  background-color: white;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 1;
-  overflow: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.nfw-dialog::-webkit-scrollbar {
-  display: none;
-}
-
-.nfw-dialog-mobile {
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-top-right-radius: 12px;
-  border-top-left-radius: 12px;
-  transform: translateY(0);
-  transition: transform 0.3s ease-in-out;
-}
-
-.nfw-dialog-desktop {
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 375px;
-  max-width: 100%;
-  max-height: none;
-  border-radius: 12px;
-}
-
 /* CloseIcon styles */
 .nfw-close-icon {
   cursor: pointer;
