@@ -3,13 +3,12 @@ import { useMediaQuery } from 'usehooks-ts';
 import {
   Dialog,
   DialogContent,
-} from "../../components/ui/dialog"
+} from "./components/ui/dialog"
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
-} from "../../components/ui/drawer"
-import CloseIcon from './components/CloseIcon';
+} from "./components/ui/drawer"
+import { X } from "lucide-react"
 
 export type IframeModalProps = {
   iframeSrc: string;
@@ -32,7 +31,6 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
 
     const [isDialogOpen, setIsDialogOpen] = useState(isOpen);
     const [dialogHeight, setDialogHeight] = useState('0px');
-    const [isIframeLoaded, setIsIframeLoaded] = useState(false);
     const [isHidden, setIsHideModal] = useState(false);
 
     const handleOnMessage = (event: MessageEvent<MessageEventData>) => {
@@ -80,29 +78,26 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
         className="nfw-iframe"
         allowFullScreen
         allow="publickey-credentials-get *; clipboard-write"
-        onLoad={() => {
-          setIsIframeLoaded(true);
-        }}
       />
     )
 
     if (!isModal) {
       return isDialogOpen ? (
         <div id="nfw-connect-iframe-container" className="nfw-iframe-container">
-          <CloseIcon onClick={handleDialogClose} />
+          <X onClick={handleDialogClose} />
           {iframeElement}
         </div>
       ) : null;
     } else {
       return isDesktop ?
         <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
-          <DialogContent className="sm:max-w-[425px]" style={{ height: dialogHeight }}  >
+          <DialogContent className={`${isHidden ? 'hidden' : ''} w-[375px]`} style={{ height: dialogHeight }}  >
             {iframeElement}
           </DialogContent>
         </Dialog>
         :
         <Drawer open={isDialogOpen} onOpenChange={handleDialogClose}   >
-          <DrawerContent style={{ height: dialogHeight }}>
+          <DrawerContent className={`${isHidden ? 'hidden' : ''}`} style={{ height: dialogHeight }}>
             {iframeElement}
           </DrawerContent>
         </Drawer>
