@@ -649,6 +649,10 @@ body {
   margin-top: 6rem;
 }
 
+.block {
+  display: block;
+}
+
 .flex {
   display: flex;
 }
@@ -793,6 +797,7 @@ body {
   top: 10px;
   right: 10px;
   cursor: pointer;
+  opacity: 0.7;
 }
 
 .hover\:opacity-100:hover {
