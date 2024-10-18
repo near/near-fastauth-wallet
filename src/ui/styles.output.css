@@ -645,6 +645,10 @@ body {
   z-index: 50;
 }
 
+.z-10 {
+  z-index: 10;
+}
+
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
@@ -680,6 +684,30 @@ body {
 
 .h-auto {
   height: auto;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.h-\[200px\] {
+  height: 200px;
+}
+
+.h-\[500px\] {
+  height: 500px;
+}
+
+.h-\[60\%\] {
+  height: 60%;
+}
+
+.h-\[70\%\] {
+  height: 70%;
+}
+
+.max-h-\[700px\] {
+  max-height: 700px;
 }
 
 .w-4 {
@@ -751,6 +779,10 @@ body {
 
 .bg-muted {
   background-color: hsl(var(--muted));
+}
+
+.p-0 {
+  padding: 0px;
 }
 
 .opacity-70 {
