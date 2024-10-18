@@ -84,7 +84,7 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
     if (!isModal) {
       return isDialogOpen ? (
         <div id="nfw-connect-iframe-container" className="nfw-iframe-container">
-          <X onClick={handleDialogClose} />
+          <X onClick={handleDialogClose} className="nfw-close-button" />
           {iframeElement}
         </div>
       ) : null;
