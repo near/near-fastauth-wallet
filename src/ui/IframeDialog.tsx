@@ -97,7 +97,7 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
         </Dialog>
         :
         <Drawer open={isDialogOpen} onOpenChange={handleDialogClose}   >
-          <DrawerContent className={`${isHidden ? 'hidden' : ''} h-[70%] max-h-[700px]`}>
+          <DrawerContent className={`${isHidden ? 'hidden' : ''}`} style={{ height: dialogHeight }}>
             {iframeElement}
           </DrawerContent>
         </Drawer>
