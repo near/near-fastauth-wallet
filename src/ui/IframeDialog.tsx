@@ -1,6 +1,14 @@
 import { useState, useEffect, useRef, forwardRef } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
-import { Dialog2 } from './components/Dialog';
+import {
+  Dialog,
+  DialogContent,
+} from "../../components/ui/dialog"
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+} from "../../components/ui/drawer"
 import CloseIcon from './components/CloseIcon';
 
 export type IframeModalProps = {
@@ -19,7 +27,7 @@ type MessageEventData = {
 
 export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
   ({ iframeSrc, isOpen, isModal }, ref) => {
-    const isMobile = useMediaQuery('(max-width: 767px)');
+    const isDesktop = useMediaQuery("(min-width: 768px)")
     const onCloseRef = useRef(null);
 
     const [isDialogOpen, setIsDialogOpen] = useState(isOpen);
@@ -86,16 +94,18 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
         </div>
       ) : null;
     } else {
-      return <Dialog2
-        isOpen={isDialogOpen}
-        onClose={handleDialogClose}
-      // dialogHeight={dialogHeight}
-      // isHidden={isHidden}
-      // isLoading={!isIframeLoaded}
-      // isMobile={isMobile}
-      >
-        {iframeElement}
-      </Dialog2>
+      return isDesktop ?
+        <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
+          <DialogContent className="sm:max-w-[425px]" style={{ height: dialogHeight }}  >
+            {iframeElement}
+          </DialogContent>
+        </Dialog>
+        :
+        <Drawer open={isDialogOpen} onOpenChange={handleDialogClose}   >
+          <DrawerContent style={{ height: dialogHeight }}>
+            {iframeElement}
+          </DrawerContent>
+        </Drawer>
     }
   }
 );
