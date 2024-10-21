@@ -8,8 +8,8 @@
     "deploy:beta": "npm run build && cd dist/near-fastauth-wallet && npm publish --tag beta",
     "test": "nx test",
     "watch": "nodemon",
-    "tailwind": "npx tailwindcss -i ./src/ui/styles.css -o ./src/ui/styles.output.css --watch",
-    "tailwind:build": "npx tailwindcss -i ./src/ui/styles.css -o ./src/ui/styles.output.css"
+    "tailwind": "npx tailwindcss -i ./src/ui/styles.input.css -o ./src/ui/styles.css --watch",
+    "tailwind:build": "npx tailwindcss -i ./src/ui/styles.input.css -o ./src/ui/styles.css"
   },
   "dependencies": {
     "@near-js/transactions": "^0.2.1",

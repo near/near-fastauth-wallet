@@ -1,6 +1,6 @@
 import ReactDOM from 'react-dom/client';
 import IframeDialog from './IframeDialog';
-import './styles.output.css';
+import './styles.css';
 
 export const renderIFrame = ({
   iframeSrc,
