@@ -109,10 +109,10 @@ export class FastAuthWalletConnection {
   _completeSignInPromise: Promise<void>;
 
   /** @hidden */
-  isModal: boolean;
+  styleModal: boolean;
   
   constructor(near: Near, appKeyPrefix: string, config: {
-    isModal: boolean;
+    styleModal: boolean;
   }) {
     if (typeof appKeyPrefix !== 'string') {
       throw new Error(
@@ -158,7 +158,7 @@ export class FastAuthWalletConnection {
     if (!this.isSignedIn()) {
       this._completeSignInPromise = this._completeSignInWithAccessKey();
     }
-    this.isModal = config.isModal;
+    this.styleModal = config.styleModal;
   }
 
   /**
@@ -628,7 +628,7 @@ export class FastAuthWalletConnection {
   renderWallet(url: string) {
     renderIFrame({
       iframeSrc: url,
-      isModal: this.isModal,
+      styleModal: this.styleModal,
     });
   }
 }

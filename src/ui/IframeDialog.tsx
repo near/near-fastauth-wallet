@@ -13,7 +13,7 @@ import { X } from "lucide-react"
 export type IframeModalProps = {
   iframeSrc: string;
   isOpen: boolean;
-  isModal?: boolean;
+  styleModal?: boolean;
 };
 
 type MessageEventData = {
@@ -25,7 +25,7 @@ type MessageEventData = {
 };
 
 export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
-  ({ iframeSrc, isOpen, isModal }, ref) => {
+  ({ iframeSrc, isOpen, styleModal }, ref) => {
     const isDesktop = useMediaQuery("(min-width: 768px)")
     const onCloseRef = useRef(null);
 
@@ -83,7 +83,7 @@ export const IframeDialog = forwardRef<HTMLIFrameElement, IframeModalProps>(
       />
     )
 
-    if (!isModal) {
+    if (!styleModal) {
       return isDialogOpen ? (
         <div id="nfw-connect-iframe-container" className="nfw-iframe-container">
           {isIframeLoaded && <X onClick={handleDialogClose} className="nfw-close-button" />}

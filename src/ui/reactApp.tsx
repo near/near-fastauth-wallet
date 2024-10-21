@@ -4,10 +4,10 @@ import './styles.output.css';
 
 export const renderIFrame = ({
   iframeSrc,
-  isModal
+  styleModal
 }: {
   iframeSrc: string;
-  isModal?: boolean;
+  styleModal?: boolean;
 }): void => {
   let rootElement = document.querySelector('#nfw-root');
 
@@ -21,7 +21,7 @@ export const renderIFrame = ({
     <IframeDialog
       isOpen
       iframeSrc={iframeSrc}
-      isModal={isModal}
+      styleModal={styleModal}
     />
   );
 };
