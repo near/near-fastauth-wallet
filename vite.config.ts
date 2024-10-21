@@ -13,6 +13,15 @@ export default defineConfig({
   //  plugins: [ nxViteTsPaths() ],
   // },
 
+  build: {
+    rollupOptions: {
+      input: {
+        main: './src/index.js', // Adjust this path to your main entry point
+        styles: './src/ui/styles.css', // Adjust this path to your generated CSS file
+      },
+    },
+  },
+
   test: {
     globals: true,
     cache: {

@@ -16,10 +16,9 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "paths": {
-      "@/ui/*": ["./src/ui/*"],
-      "near-fastauth-wallet": ["src/index.ts"]
+      "@/*": ["./*"]
     },
     "types": ["node"],
     "esModuleInterop": true
