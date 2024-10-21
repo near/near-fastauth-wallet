@@ -1,6 +1,6 @@
 {
   "name": "near-fastauth-wallet",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "license": "MIT",
   "scripts": {
     "build": "npm run tailwind:build && nx build --buildLibsFromSource --skip-nx-cache",
