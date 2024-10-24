@@ -16,7 +16,7 @@
         "outputPath": "dist/near-fastauth-wallet",
         "main": "./src/index.ts",
         "tsConfig": "./tsconfig.lib.json",
-        "assets": ["*.md"]
+        "assets": ["*.md", "src/ui/styles.css"]
       }
     },
     "lint": {
